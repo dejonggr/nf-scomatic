@@ -26,6 +26,11 @@
           "description": "Tab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'.",
           "format": "file-path"
         },
+        "genome": {
+          "type": "string",
+          "description": "Fasta file for genome build.",
+          "format": "file-path"
+        },
         "subset_bed": {
           "type": "string",
           "description": "Optionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)!",
@@ -40,11 +45,13 @@
           "type": "boolean",
           "description": "Publish the celltype-split BAMs to the celltype_bams/ subdirectory?"
         },
-        "output_dir": {
+        "out_dir": {
           "type": "string",
+          "default": "./",
           "description": "Output directory."
         }
-      }
+      },
+      "required": ["genome"]
     },
     "scomatic_options_splitbamceltypes": {
       "title": "SComatic options - SplitBamCeltypes",
@@ -123,6 +130,25 @@
         }
       }
     },
+    "scomatic_options_basecellcalling_step2": {
+      "title": "SComatic options - BaseCellCalling.step2",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "pons": {
+          "type": "string",
+          "description": "Panel of normals (PoN) file to be used to remove germline polymorphisms and recurrent artefacts.",
+          "format": "file-path"
+        },
+        "editing": {
+          "type": "string",
+          "description": "RNA editing file to be used to remove RNA-editing sites.",
+          "format": "file-path"
+        }
+      },
+      "required": ["pons", "editing"]
+    },
     "other_options": {
       "title": "Other options",
       "type": "object",
@@ -174,6 +200,9 @@
     },
     {
       "$ref": "#/$defs/scomatic_options_basecellcalling_step1"
+    },
+    {
+      "$ref": "#/$defs/scomatic_options_basecellcalling_step2"
     },
     {
       "$ref": "#/$defs/other_options"
