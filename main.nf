@@ -1,33 +1,5 @@
 nextflow.enable.dsl=2
 
-// These are the expected command line arguments
-// GEX/ATAC configuration to be delivered via a -params-file
-params.mappings = null
-params.celltypes = null
-// We expect the mappings to be on irods by default
-params.location = "irods"
-// Optionally subset the BAMs before filtering with a BED file
-// Make sure the 'chr' conventions match (ie. chr1 or 1)!
-params.subset_bed = null
-// The genotyping pipeline will specify an scomatic mutations folder
-params.mutations = null
-// Publish the celltype-split BAMs to the celltype_bams/ subdirectory? 
-params.publish_celltype_bams = false
-// SComatic params
-// -> SplitBamCellTypes.py
-params.max_nM = 5             //  maximum number of mismatches for a read
-params.max_NH = 1             //  maximum number of alignment hits for a read
-params.min_MQ = 255           //  minimum mapping quality for a read
-params.n_trim = 5             //  number of bases trimmed from beginning and end of each read
-// -> BaseCellCounter.py
-params.min_dp = 5             //  minimum depth
-params.min_cc = 5             //  minimum number of cells required to consider a genomic site
-params.min_bq = 30
-// -> BaseCellCaling.step1.py
-params.max_cell_types = 1     //  maximum number of cell types carrying the mutation
-// Output directory
-params.output_dir = './'
-
 // Download a given sample's BAM from iRODS
 // Then either retrieve the BAI or make one via indexing
 // The maxForks of 10 was set after asking jc18 about best iRODS practices

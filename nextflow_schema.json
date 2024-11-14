@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com//master/nextflow_schema.json",
+  "title": " pipeline parameters",
+  "description": "",
+  "type": "object",
+  "$defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "mappings": {
+          "type": "string",
+          "format": "file-path"
+        },
+        "location": {
+          "type": "string",
+          "enum": ["irods", "local"],
+          "description": "Location of the input files.",
+          "default": "irods"
+        },
+        "celltypes": {
+          "type": "string",
+          "description": "Tab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'.",
+          "format": "file-path"
+        },
+        "subset_bed": {
+          "type": "string",
+          "description": "Optionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)!",
+          "format": "file-path"
+        },
+        "mutations": {
+          "type": "string",
+          "description": "A folder with prior scomatic mutations output.",
+          "format": "directory-path"
+        },
+        "publish_celltype_bams": {
+          "type": "boolean",
+          "description": "Publish the celltype-split BAMs to the celltype_bams/ subdirectory?"
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "Output directory."
+        }
+      }
+    },
+    "scomatic_options_splitbamceltypes": {
+      "title": "SComatic options - SplitBamCeltypes",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "max_nM": {
+          "type": "integer",
+          "description": "Maximum number of mismatches permitted to consider reads  for analysis. By default, this filter is switched off, although we recommed using --max_nM 5. If applied, this filter requires having the nM tag in the bam file."
+        },
+        "max_NH": {
+          "type": "integer",
+          "description": "Maximum number of alignment hits permitted to consider reads for analysis. By default, this filter is switched off, although we recommend using --max_NH 1. This filter requires having the NH tag in the bam file."
+        },
+        "min_MQ": {
+          "type": "integer",
+          "description": "Minimum mapping quality required to consider reads for analysis. Set this value to 0 to switch this filter off. --min_MQ 255 is recommended for RNA data, and --min_MQ 30 for DNA data.",
+          "default": 255
+        },
+        "n_trim": {
+          "type": "integer",
+          "description": "Number of bases trimmed by setting the base quality to 0 at the beginning and end of each read.",
+          "default": 0
+        }
+      }
+    },
+    "scomatic_options_basecellcounter": {
+      "title": "SComatic options - BaseCellCounter",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "min_ac": {
+          "type": "integer",
+          "description": "Minimum alt count to consider a genomic site for further analysis.",
+          "default": 0
+        },
+        "min_af": {
+          "type": "number",
+          "description": "Minimum alt allele fraction to consider a genomic site for further analysis.",
+          "default": 0
+        },
+        "min_dp": {
+          "type": "integer",
+          "description": "Minimum coverage to consider a genomic site for further analysis.",
+          "default": 5
+        },
+        "min_cc": {
+          "type": "integer",
+          "description": "Minimum number of cells required to consider a genomic site for further analysis.",
+          "default": 5
+        },
+        "min_bq": {
+          "type": "integer",
+          "description": "Minimum base quality permited for the base counts.",
+          "default": 20
+        },
+        "max_dp": {
+          "type": "integer",
+          "description": "Maximum number of reads per genomic site that are read by pysam pileup (to save time and memory. Set this value to 0 to switch this filter off (recommended for high-depth sequencing).",
+          "default": 8000
+        }
+      }
+    },
+    "scomatic_options_basecellcalling_step1": {
+      "title": "SComatic options - BaseCellCalling.step1",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "max_cell_types": {
+          "type": "number",
+          "description": "Maximum number of celltypes carrying a mutation to make a somatic call.",
+          "default": 1
+        }
+      }
+    },
+    "other_options": {
+      "title": "Other options",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "config_profile_description": {
+          "type": "string",
+          "default": "The Wellcome Sanger Institute HPC cluster (farm22) profile",
+          "hidden": true
+        },
+        "config_profile_contact": {
+          "type": "string",
+          "default": "Priyanka Surana (@priyanka-surana)",
+          "hidden": true
+        },
+        "config_profile_url": {
+          "type": "string",
+          "default": "https://www.sanger.ac.uk",
+          "hidden": true
+        },
+        "max_memory": {
+          "type": "string",
+          "default": "2.9 TB",
+          "hidden": true
+        },
+        "max_cpus": {
+          "type": "integer",
+          "default": 256,
+          "hidden": true
+        },
+        "max_time": {
+          "type": "string",
+          "default": "30d",
+          "hidden": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/input_output_options"
+    },
+    {
+      "$ref": "#/$defs/scomatic_options_splitbamceltypes"
+    },
+    {
+      "$ref": "#/$defs/scomatic_options_basecellcounter"
+    },
+    {
+      "$ref": "#/$defs/scomatic_options_basecellcalling_step1"
+    },
+    {
+      "$ref": "#/$defs/other_options"
+    }
+  ]
+}
