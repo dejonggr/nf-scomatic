@@ -11,15 +11,22 @@
       "description": "",
       "default": "",
       "properties": {
-        "mappings": {
+        "samplesheet": {
           "type": "string",
-          "format": "file-path"
+          "format": "file-path",
+          "description": "Comma-separated samplesheet with columns 'donor_id', 'sample_id', and 'bam'."
         },
         "location": {
           "type": "string",
           "enum": ["irods", "local"],
           "description": "Location of the input files.",
           "default": "irods"
+        },
+        "modality": {
+          "type": "string",
+          "default": "GEX",
+          "description": "Single cell RNA-seq (GEX) or single cell ATAC-seq (ATAC)?",
+          "enum": ["GEX", "ATAC"]
         },
         "celltypes": {
           "type": "string",
@@ -34,6 +41,11 @@
         "subset_bed": {
           "type": "string",
           "description": "Optionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)!",
+          "format": "file-path"
+        },
+        "bed": {
+          "type": "string",
+          "description": "BED of regions of interest.",
           "format": "file-path"
         },
         "mutations": {
@@ -51,7 +63,7 @@
           "description": "Output directory."
         }
       },
-      "required": ["genome"]
+      "required": ["samplesheet", "celltypes", "genome", "bed"]
     },
     "scomatic_options_splitbamceltypes": {
       "title": "SComatic options - SplitBamCeltypes",
