@@ -9,62 +9,66 @@ include { validateParameters; paramsSummaryLog; samplesheetToList } from 'plugin
 // Then either retrieve the BAI or make one via indexing
 // The maxForks of 10 was set after asking jc18 about best iRODS practices
 process irods {
-    maxForks 10
-    label "normal4core"
-    input:
-        tuple val(sample_id), val(irods), val(bam), val(donor_id)
-    output:
-        tuple val(sample_id), val(donor_id), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
-    script:
-        """
-        iget -K ${irods}/${bam} ${sample_id}.bam
-        if [[ `ils ${irods} | grep "${bam}.bai" | wc -l` == 1 ]]
-        then
-            iget -K ${irods}/${bam}.bai ${sample_id}.bam.bai
-        else
-            samtools index -@ ${task.cpus} ${sample_id}.bam
-        fi
-        """
+  tag "${sample_id}"
+  maxForks 10
+  label "normal4core"
+  input:
+    tuple val(sample_id), val(irods), val(bam), val(donor_id)
+  output:
+    tuple val(sample_id), val(donor_id), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
+  script:
+    """
+    iget -K ${irods}/${bam} ${sample_id}.bam
+    if [[ `ils ${irods} | grep "${bam}.bai" | wc -l` == 1 ]]
+    then
+        iget -K ${irods}/${bam}.bai ${sample_id}.bam.bai
+    else
+        samtools index -@ ${task.cpus} ${sample_id}.bam
+    fi
+    """
 }
 
 // The equivalent of an irods download, but for a local copy of samplesheet
 // Symlink the BAM/BAI appropriately so they're named the right thing for downstream
 process local {
-    label "normal4core"
-    input:
-        tuple val(sample_id), path(local), val(bam), val(donor_id)
-    output:
-        tuple val(sample_id), val(donor_id), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
-    script:
-        """
-        ln -s ${local}/${bam} ${sample_id}.bam
-        if [ -f "${local}/${bam}.bai" ]
-        then
-            ln -s ${local}/${bam}.bai ${sample_id}.bam.bai
-        else
-            samtools index -@ ${task.cpus} ${sample_id}.bam
-        fi
-        """
+  tag "${sample_id}"
+  label "normal4core"
+  input:
+    tuple val(sample_id), path(local), val(bam), val(donor_id)
+  output:
+    tuple val(sample_id), val(donor_id), path("${sample_id}.bam"), path("${sample_id}.bam.bai")
+  script:
+    """
+    ln -s ${local}/${bam} ${sample_id}.bam
+    if [ -f "${local}/${bam}.bai" ]
+    then
+        ln -s ${local}/${bam}.bai ${sample_id}.bam.bai
+    else
+        samtools index -@ ${task.cpus} ${sample_id}.bam
+    fi
+    """
 }
 
 // Extract the cell type definitions for the specified sample
 // Returns the sample as part of the tuple for easy joining with sample BAM/BAI lists
 // Finds the sample ID at the start of the line as per SAMPLE_BARCODE-1 specification
 process getSampleCelltypes {
-    label "normal"
-    input:
-        tuple val(sample_id), path(celltypes)
-    output:
-        tuple val(sample_id), path("${sample_id}-celltypes.tsv")
-    script:
-        """
-        head -n 1 ${celltypes} > ${sample_id}-celltypes.tsv
-        grep "^${sample_id}" ${celltypes} >> ${sample_id}-celltypes.tsv
-        """
+  tag "${sample_id}"
+  label "normal"
+  input:
+    tuple val(sample_id), path(celltypes)
+  output:
+    tuple val(sample_id), path("${sample_id}-celltypes.tsv")
+  script:
+    """
+    head -n 1 ${celltypes} > ${sample_id}-celltypes.tsv
+    grep "^${sample_id}" ${celltypes} >> ${sample_id}-celltypes.tsv
+    """
 }
 
 // Optionally subset BAMs based on a BED file of coords
 process subset_bams {
+  tag "${sample_id}"
   label 'normal4core'
   input:
     tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
@@ -88,58 +92,61 @@ process subset_bams {
 // (sample.donor.celltype) embedded in the file names
 // The typical scomatic convention is sample.celltype, so I have to rename files
 process splitBams {
-    label "long"
-    input:
-        tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
-    output:
-        path("output/${sample_id}.${donor_id}*.bam"), emit: "bam"
-        path("output/${sample_id}.${donor_id}*.bam.bai"), emit: "bai"
-    script:
-        """
-        mkdir -p output
-        python3 ${params.scomatic}/SplitBam/SplitBamCellTypes.py --bam ${bam} \
-            --meta ${celltypes} \
-            --id ${sample_id} \
-            --max_nM ${params.max_nM} \
-            --max_NH ${params.max_NH} \
-            --min_MQ ${params.min_MQ} \
-            --n_trim ${params.n_trim} \
-            --outdir output
-        for file in output/${sample_id}* ; do
-          new_file=\$(echo \$file | sed "s/${sample_id}/${sample_id}.${donor_id}/g")
-          mv \$file \$new_file
-        done
-        """
+  tag "${sample_id}"
+  label "long"
+  input:
+    tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
+  output:
+    path("output/${sample_id}.${donor_id}*.bam"), emit: "bam"
+    path("output/${sample_id}.${donor_id}*.bam.bai"), emit: "bai"
+  script:
+    """
+    mkdir -p output
+    python3 ${params.scomatic}/SplitBam/SplitBamCellTypes.py --bam ${bam} \
+        --meta ${celltypes} \
+        --id ${sample_id} \
+        --max_nM ${params.max_nM} \
+        --max_NH ${params.max_NH} \
+        --min_MQ ${params.min_MQ} \
+        --n_trim ${params.n_trim} \
+        --outdir output
+    for file in output/${sample_id}* ; do
+      new_file=\$(echo \$file | sed "s/${sample_id}/${sample_id}.${donor_id}/g")
+      mv \$file \$new_file
+    done
+    """
 }
 
 // Merge the per-sample BAMs for each cell type into one per-donor file
 // Pass the donor and cell type along for a while for downstream process use
 process mergeCelltypeBams {
-    label "normal4core"
-    input:
-        tuple val(donor_id), val(celltype), path(bams), path(bais)
-    output:
-        tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
-    script:
-        """
-        samtools merge -@ {task.cpus} ${donor_id}.${celltype}.bam ${bams}
-        """
+  tag "${donor_id}"
+  label "normal4core"
+  input:
+    tuple val(donor_id), val(celltype), path(bams), path(bais)
+  output:
+    tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
+  script:
+    """
+    samtools merge -@ {task.cpus} ${donor_id}.${celltype}.bam ${bams}
+    """
 }
 
 // Index the donor-celltype BAMs, returning both the BAM and BAI
 process indexCelltypeBams {
-    label "normal4core"
-    publishDir "${params.out_dir}/${donor_id}/celltype_bams/", 
-      mode: "copy",
-      enabled: params.publish_celltype_bams
-    input:
-        tuple val(donor_id), val(celltype), path(bam)
-    output:
-        tuple val(donor_id), val(celltype), path(bam), path("*.bam.bai")
-    script:
-        """
-        samtools index -@ {task.cpus} ${bam}
-        """
+  tag "${donor_id}"
+  label "normal4core"
+  publishDir "${params.out_dir}/${donor_id}/celltype_bams/", 
+    mode: "copy",
+    enabled: params.publish_celltype_bams
+  input:
+    tuple val(donor_id), val(celltype), path(bam)
+  output:
+    tuple val(donor_id), val(celltype), path(bam), path("*.bam.bai")
+  script:
+    """
+    samtools index -@ {task.cpus} ${bam}
+    """
 }
 
 // Step two of scomatic - convert the donor-celltype BAMs to scomatic's TSVs
@@ -149,169 +156,178 @@ process indexCelltypeBams {
 // There can sometimes be no output file, so specify it as optional
 // Can't pass out donor info because tuples and optional don't get along
 process bamToTsv {
-    cpus 16
-    label "long16core"
-    input:
-        tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai)
-    output:
-        path("output/*.tsv", optional: true)
-    script:
-        """
-        mkdir -p temp
-        mkdir -p output
-        python3 ${params.scomatic}/BaseCellCounter/BaseCellCounter.py --bam ${bam} \
-          --ref ${fasta} \
-          --chrom all \
-          --out_folder output \
-          --min_bq ${params.min_bq} \
-          --min_mq ${params.min_MQ} \
-          --min_cc ${params.min_cc} \
-          --min_dp ${params.min_dp} \
-          --tmp_dir temp \
-          --bin 1000000 \
-          --nprocs ${task.cpus}
-        rm -rf temp
-        """
+  tag "${donor_id}"
+  cpus 16
+  label "long16core"
+  input:
+    tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai)
+  output:
+    path("output/*.tsv", optional: true)
+  script:
+    """
+    mkdir -p temp
+    mkdir -p output
+    python3 ${params.scomatic}/BaseCellCounter/BaseCellCounter.py --bam ${bam} \
+      --ref ${fasta} \
+      --chrom all \
+      --out_folder output \
+      --min_bq ${params.min_bq} \
+      --min_mq ${params.min_MQ} \
+      --min_cc ${params.min_cc} \
+      --min_dp ${params.min_dp} \
+      --tmp_dir temp \
+      --bin 1000000 \
+      --nprocs ${task.cpus}
+    rm -rf temp
+    """
 }
 
 // Step three of scomatic - merge the celltype TSVs into a single mega TSV
 // Important to stage the input in a directory here so scomatic sees it like it wants to
 process mergeTsvs {
-    label "week"
-    input:
-        tuple val(donor_id), path(tsvs, stageAs: "input/*")
-    output:
-        tuple val(donor_id), path("${donor_id}.BaseCellCounts.AllCellTypes.tsv")
-    script:
-        """
-        python3 ${params.scomatic}/MergeCounts/MergeBaseCellCounts.py --tsv_folder input \
-            --outfile ${donor_id}.BaseCellCounts.AllCellTypes.tsv
-        """
+  tag "${donor_id}"
+  label "week"
+  input:
+    tuple val(donor_id), path(tsvs, stageAs: "input/*")
+  output:
+    tuple val(donor_id), path("${donor_id}.BaseCellCounts.AllCellTypes.tsv")
+  script:
+    """
+    python3 ${params.scomatic}/MergeCounts/MergeBaseCellCounts.py --tsv_folder input \
+        --outfile ${donor_id}.BaseCellCounts.AllCellTypes.tsv
+    """
 }
 
 // Step 4.1 of scomatic - perform the initial mutation calling
 // Set max_cell_types to a stratospheric value to disable that filter
 // As we are interested in germline mutations spanning multiple populations
 process callMutations {
-    label "week"
-    input:
-        tuple val(donor_id), path(tsv), path(fasta), path(fai)
-    output:
-        tuple val(donor_id), path("${donor_id}.calling.step1.tsv")
-    script:
-        """
-        python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step1.py \
-            --infile ${tsv} \
-            --outfile ${donor_id} \
-            --ref ${fasta} \
-            --max_cell_types ${params.max_cell_types}
-        """
+  tag "${donor_id}"
+  label "week"
+  input:
+    tuple val(donor_id), path(tsv), path(fasta), path(fai)
+  output:
+    tuple val(donor_id), path("${donor_id}.calling.step1.tsv")
+  script:
+    """
+    python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step1.py \
+        --infile ${tsv} \
+        --outfile ${donor_id} \
+        --ref ${fasta} \
+        --max_cell_types ${params.max_cell_types}
+    """
 }
 
 // Step 4.2 of scomatic - perform initial mutation filtering
 // Need to do GEX and ATAC separately due to the editing file
 // This needs a bunch of memory apparently for reasons that I can't identify from the code
 process filterMutationsGex {
-    label "long10gb"
-    publishDir "${params.out_dir}/${donor_id}", mode:"copy"
-    input:
-        tuple val(donor_id), path(tsv), path(pons), path(editing)
-    output:
-        tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
-    script:
-        """
-        python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step2.py \
-            --infile ${tsv} \
-            --outfile ${donor_id} \
-            --editing ${editing} \
-            --pon ${pons}
-        """
+  tag "${donor_id}"
+  label "long10gb"
+  publishDir "${params.out_dir}/${donor_id}", mode:"copy"
+  input:
+    tuple val(donor_id), path(tsv), path(pons), path(editing)
+  output:
+    tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
+  script:
+    """
+    python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step2.py \
+        --infile ${tsv} \
+        --outfile ${donor_id} \
+        --editing ${editing} \
+        --pon ${pons}
+    """
 }
 
 process filterMutationsAtac {
-    label "long10gb"
-    publishDir "${params.out_dir}/${donor_id}", mode:"copy"
-    input:
-        tuple val(donor_id), path(tsv), path(pons)
-    output:
-        tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
-    script:
-        """
-        python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step2.py \
-            --infile ${tsv} \
-            --outfile ${donor_id} \
-            --pon ${pons}
-        """
+  tag "${donor_id}"
+  label "long10gb"
+  publishDir "${params.out_dir}/${donor_id}", mode:"copy"
+  input:
+    tuple val(donor_id), path(tsv), path(pons)
+  output:
+    tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
+  script:
+    """
+    python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step2.py \
+        --infile ${tsv} \
+        --outfile ${donor_id} \
+        --pon ${pons}
+    """
 }
 
 // Intersect the filtered mutations with a BED region of interest
 process intersectBed {
-    label "normal"
-    publishDir "${params.out_dir}/${donor_id}", mode:"copy"
-    input:
-        tuple val(donor_id), path(tsv), path(bed)
-    output:
-        tuple val(donor_id), path("${donor_id}.calling.step2.intersect.tsv")
-    script:
-        """
-        bedtools intersect -header -a ${tsv} -b ${bed} > ${donor_id}.calling.step2.intersect.tsv
-        """
+  tag "${donor_id}"
+  label "normal"
+  publishDir "${params.out_dir}/${donor_id}", mode:"copy"
+  input:
+    tuple val(donor_id), path(tsv), path(bed)
+  output:
+    tuple val(donor_id), path("${donor_id}.calling.step2.intersect.tsv")
+  script:
+    """
+    bedtools intersect -header -a ${tsv} -b ${bed} > ${donor_id}.calling.step2.intersect.tsv
+    """
 }
 
 // Final mutation filter, just keep the PASS ones
 // Standard $ escaping applies
 process passMutations {
-    label "normal"
-    publishDir "${params.out_dir}/${donor_id}", mode:"copy"
-    input:
-        tuple val(donor_id), path(tsv)
-    output:
-        tuple val(donor_id), path("${donor_id}.calling.step2.pass.tsv")
-    script:
-        """
-        awk '\$1 ~ /^#/ || \$6 == "PASS"' ${tsv} > ${donor_id}.calling.step2.pass.tsv
-        """
+  tag "${donor_id}"
+  label "normal"
+  publishDir "${params.out_dir}/${donor_id}", mode:"copy"
+  input:
+    tuple val(donor_id), path(tsv)
+  output:
+    tuple val(donor_id), path("${donor_id}.calling.step2.pass.tsv")
+  script:
+    """
+    awk '\$1 ~ /^#/ || \$6 == "PASS"' ${tsv} > ${donor_id}.calling.step2.pass.tsv
+    """
 }
 
 // Get callable sites on a per cell type level
 // This makes a couple files, both end in .report.tsv
 process callableSitesCellType {
-    label "long"
-    publishDir "${params.out_dir}/${donor_id}", mode:"copy"
-    input:
-        tuple val(donor_id), path(tsv)
-    output:
-        tuple val(donor_id), path("*.report.tsv")
-    script:
-        """
-        python3 ${params.scomatic}/GetCallableSites/GetAllCallableSites.py \
-            --infile ${tsv} \
-            --outfile ${donor_id}
-        """
+  tag "${donor_id}"
+  label "long"
+  publishDir "${params.out_dir}/${donor_id}", mode:"copy"
+  input:
+    tuple val(donor_id), path(tsv)
+  output:
+    tuple val(donor_id), path("*.report.tsv")
+  script:
+    """
+    python3 ${params.scomatic}/GetCallableSites/GetAllCallableSites.py \
+        --infile ${tsv} \
+        --outfile ${donor_id}
+    """
 }
 
 // Get callable sites on a cell level
 // Mirror argument values based on earlier bamToTsv step for consistency
 process callableSitesCell {
-    label "week16core10gb"
-    publishDir "${params.out_dir}/${donor_id}/cell_callable_sites", mode:"copy"
-    input:
-        tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai), path(tsv)
-    output:
-        tuple val(donor_id), val(celltype), path("*.SitesPerCell.tsv")
-    script:
-        """
-        mkdir -p temp
-        python3 ${params.scomatic}/SitesPerCell/SitesPerCell.py --bam ${bam} \
-            --infile ${tsv} \
-            --ref ${fasta} \
-            --min_bq ${params.min_bq} \
-            --min_mq ${params.min_MQ} \
-            --tmp_dir temp \
-            --bin 1000000 \
-            --nprocs ${task.cpus}
-        rm -rf temp
-        """
+  tag "${donor_id}"
+  label "week16core10gb"
+  publishDir "${params.out_dir}/${donor_id}/cell_callable_sites", mode:"copy"
+  input:
+    tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai), path(tsv)
+  output:
+    tuple val(donor_id), val(celltype), path("*.SitesPerCell.tsv")
+  script:
+    """
+    mkdir -p temp
+    python3 ${params.scomatic}/SitesPerCell/SitesPerCell.py --bam ${bam} \
+        --infile ${tsv} \
+        --ref ${fasta} \
+        --min_bq ${params.min_bq} \
+        --min_mq ${params.min_MQ} \
+        --tmp_dir temp \
+        --bin 1000000 \
+        --nprocs ${task.cpus}
+    rm -rf temp
+    """
 }
 
 // Post-processing - convert the donor-celltype BAMs to per cell genotypes
@@ -319,27 +335,28 @@ process callableSitesCell {
 // Also the LSF config for this uses scratch to not pollute the drive with those files
 // (Even if they are just temporary and get removed at the end of the process)
 process bamToGenotype {
-    label "long16core10gb"
-    publishDir "${params.out_dir}/${donor_id}-genotypes", mode:"copy"
-    input:
-        tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai), path(allcelltypes), path(mutations)
-    output:
-        path("${donor_id}.${celltype}.single_cell_genotype.tsv", optional: true)
-    script:
-        """
-        mkdir -p temp
-        python3 ${params.scomatic}/SingleCellGenotype/SingleCellGenotype.py --bam ${bam} \
-            --ref ${fasta} \
-            --infile ${mutations}/${donor_id}/${donor_id}.calling.step2.intersect.tsv \
-            --meta ${allcelltypes} \
-            --outfile ${donor_id}.${celltype}.single_cell_genotype.tsv \
-            --min_bq ${params.min_bq} \
-            --min_mq ${params.min_MQ} \
-            --tmp_dir temp \
-            --bin 1000000 \
-            --nprocs ${task.cpus}
-        rm -rf temp
-        """
+  tag "${donor_id}"
+  label "long16core10gb"
+  publishDir "${params.out_dir}/${donor_id}-genotypes", mode:"copy"
+  input:
+    tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai), path(allcelltypes), path(mutations)
+  output:
+    path("${donor_id}.${celltype}.single_cell_genotype.tsv", optional: true)
+  script:
+    """
+    mkdir -p temp
+    python3 ${params.scomatic}/SingleCellGenotype/SingleCellGenotype.py --bam ${bam} \
+        --ref ${fasta} \
+        --infile ${mutations}/${donor_id}/${donor_id}.calling.step2.intersect.tsv \
+        --meta ${allcelltypes} \
+        --outfile ${donor_id}.${celltype}.single_cell_genotype.tsv \
+        --min_bq ${params.min_bq} \
+        --min_mq ${params.min_MQ} \
+        --tmp_dir temp \
+        --bin 1000000 \
+        --nprocs ${task.cpus}
+    rm -rf temp
+    """
 }
 
 // Perform the various data downloading and demultiplexing early in scomatic
