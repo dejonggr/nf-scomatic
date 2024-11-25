@@ -49,6 +49,45 @@ process local {
     """
 }
 
+// Optionally subset BAMs based on a BED file of coords
+process subset_bams {
+  tag "${sample_id}"
+  label 'normal4core'
+  input:
+    tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
+  output:
+    tuple val(sample_id), val(donor_id), path("subset/*.bam"), path("subset/*.bam.bai"), path(celltypes)
+  script:
+    """
+    mkdir subset/
+    samtools view -b -h -L ${params.subset_bed} ${bam} > subset/${sample_id}.bam
+    (cd subset ; samtools index -@ ${task.cpus} ${sample_id}.bam)
+    """
+}
+
+// Optionally artificially set base qualities to maximum in the BAM
+// This should be used when running on PacBio data, where base quality
+// scores are set to `*`, which cannot be handled by various SComatic scripts.
+process ignore_base_quality {
+  tag "${sample_id}"
+  label 'normal4core'
+  input:
+    tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
+  output:
+    tuple val(sample_id), val(donor_id),
+          path("ignore_bq/${sample_id}.bam"),
+          path("ignore_bq/${sample_id}.bam.bai"),
+          path(celltypes)
+  script:
+    """
+    mkdir ignore_bq/
+    samtools view -h ${bam} |
+    awk 'BEGIN{OFS="\\t"} /^@/ {print; next} { \$11 = ""; for (i=1; i<=length(\$10); i++) \$11 = \$11 "~"; print }' \
+    > ignore_bq/${sample_id}.bam
+    (cd ignore_bq ; samtools index -@ ${task.cpus} ${sample_id}.bam)
+    """
+}
+
 // Extract the cell type definitions for the specified sample
 // Returns the sample as part of the tuple for easy joining with sample BAM/BAI lists
 // Finds the sample ID at the start of the line as per SAMPLE_BARCODE-1 specification
@@ -63,22 +102,6 @@ process getSampleCelltypes {
     """
     head -n 1 ${celltypes} > ${sample_id}-celltypes.tsv
     grep "^${sample_id}" ${celltypes} >> ${sample_id}-celltypes.tsv
-    """
-}
-
-// Optionally subset BAMs based on a BED file of coords
-process subset_bams {
-  tag "${sample_id}"
-  label 'normal4core'
-  input:
-    tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
-  output:
-    tuple val(sample_id), val(donor_id), path("subset/*.bam"), path("subset/*.bam.bai"), path("${sample_id}-celltypes.tsv")
-  script:
-    """
-    mkdir subset/
-    samtools view -b -h -L ${params.subset_bed} ${bam} > subset/${sample_id}.bam
-    (cd subset ; samtools index -@ ${task.cpus} ${sample_id}.bam)
     """
 }
 
@@ -100,16 +123,17 @@ process splitBams {
     path("output/${sample_id}.${donor_id}*.bam"), emit: "bam"
     path("output/${sample_id}.${donor_id}*.bam.bai"), emit: "bai"
   script:
+    def nm_arg = params.max_nM == null ? "" : "--max_nM ${params.max_nM}"
+    def nh_arg = params.max_NH == null ? "" : "--max_NH ${params.max_NH}"
     """
     mkdir -p output
-    python3 ${params.scomatic}/SplitBam/SplitBamCellTypes.py --bam ${bam} \
-        --meta ${celltypes} \
-        --id ${sample_id} \
-        --max_nM ${params.max_nM} \
-        --max_NH ${params.max_NH} \
-        --min_MQ ${params.min_MQ} \
-        --n_trim ${params.n_trim} \
-        --outdir output
+    python3 ${params.scomatic}/SplitBam/SplitBamCellTypes.py \\
+      --bam ${bam} \\
+      --meta ${celltypes} \\
+      --id ${sample_id} \\
+      --min_MQ ${params.min_MQ} \\
+      --n_trim ${params.n_trim} \\
+      --outdir output $nm_arg $nh_arg
     for file in output/${sample_id}* ; do
       new_file=\$(echo \$file | sed "s/${sample_id}/${sample_id}.${donor_id}/g")
       mv \$file \$new_file
@@ -440,13 +464,21 @@ workflow STEP1 {
     
     // optional pre-processing step: subset bams to regions of interest
     if (params.subset_bed == null) {
-      bams_to_split = sampleBamsCelltypes
+      bams_to_split_1 = sampleBamsCelltypes
     } else {
-      bams_to_split = subset_bams(sampleBamsCelltypes)
+      bams_to_split_1 = subset_bams(sampleBamsCelltypes)
+    }
+
+    // optional pre-processing step: set base quality to maximum for all reads
+    // to handle PacBio data where base quality scores are set to `*`
+    if (params.ignore_base_quality) {
+      bams_to_split_2 = ignore_base_quality(bams_to_split_1)
+    } else {
+      bams_to_split_2 = bams_to_split_1
     }
     
     // Step one of scomatic - split the BAMs to cell types on a per sample basis
-    sampleFiles = splitBams(bams_to_split)
+    sampleFiles = splitBams(bams_to_split_2)
     // This outputs a "list of lists" of BAMs/BAIs, constructed for each sample
     // Flatten the files into a single list, and then index them as 
     // sample.donor.celltype

@@ -43,6 +43,10 @@
           "description": "Optionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)!",
           "format": "file-path"
         },
+        "ignore_base_quality": {
+          "type": "boolean",
+          "description": "Optionally ignore base quality scores in the BAM. The pipeline will artificially set the quality to the maximum value for all bases, to circumvent SComatic's filtering."
+        },
         "bed": {
           "type": "string",
           "description": "BED of regions of interest.",
