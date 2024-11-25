@@ -153,13 +153,20 @@ def split_bam(bam, txt, outdir,donor,tissue,max_NM,max_NH,min_MAPQ,n_trim):
 				trim_end = n_trim
 
 			# Set base qualities to 0 at the beginning and the end of the read if specified
-			# Get first and last qualities
-			Q_indexes = list(np.arange(trim_start)) + list((np.arange(trim_end) + 1)*-1)
+      # Get first and last qualities
+			Q_indexes = list(np.arange(trim_start)) + list((np.arange(trim_end) + 1) * -1)
 			Q = read.query_qualities
-			for Qi in Q_indexes:
-				Q[Qi] = 0
 
-			# Substitute qualities
+      # If query qualities are missing, initialize them with zeros
+			if Q is None:
+				Q = np.zeros(len(read.query_sequence), dtype=np.uint8)
+
+      # Modify the qualities based on the specified trim indices
+			for Qi in Q_indexes:
+				if -len(Q) <= Qi < len(Q):  # Ensure the index is within the valid range
+					Q[Qi] = 0
+
+      # Substitute the modified qualities back into the read
 			read.query_qualities = Q
 
 		# Print passed read
