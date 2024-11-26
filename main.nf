@@ -82,7 +82,8 @@ process ignore_base_quality {
     """
     mkdir ignore_bq/
     samtools view -h ${bam} |
-    awk 'BEGIN{OFS="\\t"} /^@/ {print; next} { \$11 = ""; for (i=1; i<=length(\$10); i++) \$11 = \$11 "~"; print }' \
+    awk 'BEGIN{OFS="\\t"} /^@/ {print; next} { \$11 = ""; for (i=1; i<=length(\$10); i++) \$11 = \$11 "~"; print }' |
+    samtools view -bS - \
     > ignore_bq/${sample_id}.bam
     (cd ignore_bq ; samtools index -@ ${task.cpus} ${sample_id}.bam)
     """
