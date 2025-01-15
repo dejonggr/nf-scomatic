@@ -431,7 +431,7 @@ workflow STEP1 {
     // Then glue it back together with _ as the delimiter
     // The equivalent of "_".join(VARIABLE.split("_")[:-1]) in python
     celltypeSamples = allCelltypes
-      .splitCsv(sep:"\t", skip:1)
+      .splitCsv(skip: 1)
       .map({it -> it[0].split("_")[0..-2].join("_")})
       .unique()
     
