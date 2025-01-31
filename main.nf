@@ -1,5 +1,3 @@
-nextflow.enable.dsl=2
-
 // TODO: implement extra params in scomatic commands
 
 // import functions / modules / subworkflows / workflows
@@ -394,6 +392,9 @@ process bamToGenotype {
 workflow STEP1 {
   main:
 
+    // validate parameters
+    validateParameters()
+
     // Make sure all the input files actually exist
     if (params.samplesheet == null) {
       error "Please provide a samplesheet CSV file via --samplesheet"
@@ -417,9 +418,9 @@ workflow STEP1 {
     allCelltypes = Channel.fromPath(params.celltypes, checkIfExists: true)
     fasta = Channel.fromPath(params.genome, checkIfExists: true)
     fai = Channel.fromPath(params.genome+".fai", checkIfExists: true)
-    
+
     // Check the modality
-    if (!(params.modality in ["GEX","ATAC"])) {
+    if (!(params.modality in ["GEX", "ATAC"])) {
       error "Unknown modality, must be GEX or ATAC"
     }
     
@@ -434,7 +435,7 @@ workflow STEP1 {
       .splitCsv(skip: 1)
       .map({it -> it[0].split("_")[0..-2].join("_")})
       .unique()
-    
+
     // Doing a join here keeps the intersection of the sample IDs
     // That show up in both the samplesheet info and our parsed celltype sample list
     samplesheet = samplesheet.join(celltypeSamples)

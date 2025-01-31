@@ -171,21 +171,6 @@
       "description": "",
       "default": "",
       "properties": {
-        "config_profile_description": {
-          "type": "string",
-          "default": "The Wellcome Sanger Institute HPC cluster (farm22) profile",
-          "hidden": true
-        },
-        "config_profile_contact": {
-          "type": "string",
-          "default": "Priyanka Surana (@priyanka-surana)",
-          "hidden": true
-        },
-        "config_profile_url": {
-          "type": "string",
-          "default": "https://www.sanger.ac.uk",
-          "hidden": true
-        },
         "max_memory": {
           "type": "string",
           "default": "2.9 TB",
