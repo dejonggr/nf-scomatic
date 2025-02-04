@@ -79,6 +79,7 @@ process ignore_base_quality {
   script:
     """
     mkdir ignore_bq/
+    module load samtools-1.19.2/python-3.11.6
     samtools view -h ${bam} |
     awk 'BEGIN{OFS="\\t"} /^@/ {print; next} { \$11 = ""; for (i=1; i<=length(\$10); i++) \$11 = \$11 "~"; print }' |
     samtools view -bS - \
@@ -126,7 +127,7 @@ process splitBams {
     def nh_arg = params.max_NH == null ? "" : "--max_NH ${params.max_NH}"
     """
     mkdir -p output
-    python3 ${params.scomatic}/SplitBam/SplitBamCellTypes.py \\
+    python3 SplitBamCellTypes.py \\
       --bam ${bam} \\
       --meta ${celltypes} \\
       --id ${sample_id} \\
@@ -190,7 +191,7 @@ process bamToTsv {
     """
     mkdir -p temp
     mkdir -p output
-    python3 ${params.scomatic}/BaseCellCounter/BaseCellCounter.py --bam ${bam} \
+    python3 BaseCellCounter.py --bam ${bam} \
       --ref ${fasta} \
       --chrom all \
       --out_folder output \
@@ -216,7 +217,7 @@ process mergeTsvs {
     tuple val(donor_id), path("${donor_id}.BaseCellCounts.AllCellTypes.tsv")
   script:
     """
-    python3 ${params.scomatic}/MergeCounts/MergeBaseCellCounts.py --tsv_folder input \
+    python3 MergeBaseCellCounts.py --tsv_folder input \
         --outfile ${donor_id}.BaseCellCounts.AllCellTypes.tsv
     """
 }
@@ -233,7 +234,7 @@ process callMutations {
     tuple val(donor_id), path("${donor_id}.calling.step1.tsv")
   script:
     """
-    python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step1.py \
+    python3 BaseCellCalling.step1.py \
         --infile ${tsv} \
         --outfile ${donor_id} \
         --ref ${fasta} \
@@ -254,7 +255,7 @@ process filterMutationsGex {
     tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
   script:
     """
-    python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step2.py \
+    python3 BaseCellCalling.step2.py \
         --infile ${tsv} \
         --outfile ${donor_id} \
         --editing ${editing} \
@@ -272,7 +273,7 @@ process filterMutationsAtac {
     tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
   script:
     """
-    python3 ${params.scomatic}/BaseCellCalling/BaseCellCalling.step2.py \
+    python3 BaseCellCalling.step2.py \
         --infile ${tsv} \
         --outfile ${donor_id} \
         --pon ${pons}
@@ -322,7 +323,7 @@ process callableSitesCellType {
     tuple val(donor_id), path("*.report.tsv")
   script:
     """
-    python3 ${params.scomatic}/GetCallableSites/GetAllCallableSites.py \
+    python3 GetAllCallableSites.py \
         --infile ${tsv} \
         --outfile ${donor_id}
     """
@@ -341,7 +342,7 @@ process callableSitesCell {
   script:
     """
     mkdir -p temp
-    python3 ${params.scomatic}/SitesPerCell/SitesPerCell.py --bam ${bam} \
+    python3 SitesPerCell.py --bam ${bam} \
         --infile ${tsv} \
         --ref ${fasta} \
         --min_bq ${params.min_bq} \
@@ -368,7 +369,7 @@ process bamToGenotype {
   script:
     """
     mkdir -p temp
-    python3 ${params.scomatic}/SingleCellGenotype/SingleCellGenotype.py --bam ${bam} \
+    python3 SingleCellGenotype.py --bam ${bam} \
         --ref ${fasta} \
         --infile ${mutations}/${donor_id}/${donor_id}.calling.step2.intersect.tsv \
         --meta ${allcelltypes} \
