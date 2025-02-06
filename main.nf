@@ -127,7 +127,7 @@ process splitBams {
     def nh_arg = params.max_NH == null ? "" : "--max_NH ${params.max_NH}"
     """
     mkdir -p output
-    python3 SplitBamCellTypes.py \\
+    SplitBamCellTypes.py \\
       --bam ${bam} \\
       --meta ${celltypes} \\
       --id ${sample_id} \\
@@ -191,16 +191,16 @@ process bamToTsv {
     """
     mkdir -p temp
     mkdir -p output
-    python3 BaseCellCounter.py --bam ${bam} \
-      --ref ${fasta} \
-      --chrom all \
-      --out_folder output \
-      --min_bq ${params.min_bq} \
-      --min_mq ${params.min_MQ} \
-      --min_cc ${params.min_cc} \
-      --min_dp ${params.min_dp} \
-      --tmp_dir temp \
-      --bin 1000000 \
+    BaseCellCounter.py --bam ${bam} \\
+      --ref ${fasta} \\
+      --chrom all \\
+      --out_folder output \\
+      --min_bq ${params.min_bq} \\
+      --min_mq ${params.min_MQ} \\
+      --min_cc ${params.min_cc} \\
+      --min_dp ${params.min_dp} \\
+      --tmp_dir temp \\
+      --bin 1000000 \\
       --nprocs ${task.cpus}
     rm -rf temp
     """
@@ -217,8 +217,9 @@ process mergeTsvs {
     tuple val(donor_id), path("${donor_id}.BaseCellCounts.AllCellTypes.tsv")
   script:
     """
-    python3 MergeBaseCellCounts.py --tsv_folder input \
-        --outfile ${donor_id}.BaseCellCounts.AllCellTypes.tsv
+    MergeBaseCellCounts.py \\
+      --tsv_folder input \\
+      --outfile ${donor_id}.BaseCellCounts.AllCellTypes.tsv
     """
 }
 
@@ -234,11 +235,11 @@ process callMutations {
     tuple val(donor_id), path("${donor_id}.calling.step1.tsv")
   script:
     """
-    python3 BaseCellCalling.step1.py \
-        --infile ${tsv} \
-        --outfile ${donor_id} \
-        --ref ${fasta} \
-        --max_cell_types ${params.max_cell_types}
+    BaseCellCalling.step1.py \\
+      --infile ${tsv} \\
+      --outfile ${donor_id} \\
+      --ref ${fasta} \\
+      --max_cell_types ${params.max_cell_types}
     """
 }
 
@@ -255,11 +256,11 @@ process filterMutationsGex {
     tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
   script:
     """
-    python3 BaseCellCalling.step2.py \
-        --infile ${tsv} \
-        --outfile ${donor_id} \
-        --editing ${editing} \
-        --pon ${pons}
+    BaseCellCalling.step2.py \\
+      --infile ${tsv} \\
+      --outfile ${donor_id} \\
+      --editing ${editing} \\
+      --pon ${pons}
     """
 }
 
@@ -273,10 +274,10 @@ process filterMutationsAtac {
     tuple val(donor_id), path("${donor_id}.calling.step2.tsv")
   script:
     """
-    python3 BaseCellCalling.step2.py \
-        --infile ${tsv} \
-        --outfile ${donor_id} \
-        --pon ${pons}
+    BaseCellCalling.step2.py \\
+      --infile ${tsv} \\
+      --outfile ${donor_id} \\
+      --pon ${pons}
     """
 }
 
@@ -291,7 +292,11 @@ process intersectBed {
     tuple val(donor_id), path("${donor_id}.calling.step2.intersect.tsv")
   script:
     """
-    bedtools intersect -header -a ${tsv} -b ${bed} > ${donor_id}.calling.step2.intersect.tsv
+    bedtools intersect \\
+      -header \\
+      -a ${tsv} \\
+      -b ${bed} \\
+    > ${donor_id}.calling.step2.intersect.tsv
     """
 }
 
@@ -307,7 +312,8 @@ process passMutations {
     tuple val(donor_id), path("${donor_id}.calling.step2.pass.tsv")
   script:
     """
-    awk '\$1 ~ /^#/ || \$6 == "PASS"' ${tsv} > ${donor_id}.calling.step2.pass.tsv
+    awk '\$1 ~ /^#/ || \$6 == "PASS"' ${tsv} \\
+    > ${donor_id}.calling.step2.pass.tsv
     """
 }
 
@@ -323,9 +329,9 @@ process callableSitesCellType {
     tuple val(donor_id), path("*.report.tsv")
   script:
     """
-    python3 GetAllCallableSites.py \
-        --infile ${tsv} \
-        --outfile ${donor_id}
+    GetAllCallableSites.py \\
+      --infile ${tsv} \\
+      --outfile ${donor_id}
     """
 }
 
@@ -342,14 +348,15 @@ process callableSitesCell {
   script:
     """
     mkdir -p temp
-    python3 SitesPerCell.py --bam ${bam} \
-        --infile ${tsv} \
-        --ref ${fasta} \
-        --min_bq ${params.min_bq} \
-        --min_mq ${params.min_MQ} \
-        --tmp_dir temp \
-        --bin 1000000 \
-        --nprocs ${task.cpus}
+    SitesPerCell.py \\
+      --bam ${bam} \\
+      --infile ${tsv} \\
+      --ref ${fasta} \\
+      --min_bq ${params.min_bq} \\
+      --min_mq ${params.min_MQ} \\
+      --tmp_dir temp \\
+      --bin 1000000 \\
+      --nprocs ${task.cpus}
     rm -rf temp
     """
 }
@@ -369,16 +376,17 @@ process bamToGenotype {
   script:
     """
     mkdir -p temp
-    python3 SingleCellGenotype.py --bam ${bam} \
-        --ref ${fasta} \
-        --infile ${mutations}/${donor_id}/${donor_id}.calling.step2.intersect.tsv \
-        --meta ${allcelltypes} \
-        --outfile ${donor_id}.${celltype}.single_cell_genotype.tsv \
-        --min_bq ${params.min_bq} \
-        --min_mq ${params.min_MQ} \
-        --tmp_dir temp \
-        --bin 1000000 \
-        --nprocs ${task.cpus}
+    SingleCellGenotype.py \\
+      --bam ${bam} \\
+      --ref ${fasta} \\
+      --infile ${mutations}/${donor_id}/${donor_id}.calling.step2.intersect.tsv \\
+      --meta ${allcelltypes} \\
+      --outfile ${donor_id}.${celltype}.single_cell_genotype.tsv \\
+      --min_bq ${params.min_bq} \\
+      --min_mq ${params.min_MQ} \\
+      --tmp_dir temp \\
+      --bin 1000000 \\
+      --nprocs ${task.cpus}
     rm -rf temp
     """
 }
