@@ -146,7 +146,7 @@ polymorphisms and recurrent artefacts.
 
 ### `GRCh38`
 
-If you are running this pipeline with GRCh38, you can use `--profile GRCh38` 
+If you are running this pipeline with GRCh38, you can use `-profile GRCh38` 
 and the pipeline will use the appropriate local files for `--genome`, `--pons`,
 `--editing`, and `--bed`:
 
@@ -163,8 +163,8 @@ section on reference files. You will have to manually download these yourself.
 ### `pacbio`
 
 PacBio BAMs have different sequencing quality metrics than 10X BAMs. When using
-PacBio BAMs, please use the profile `--profile pacbio` so that the appropriate
-filters can be used:
+PacBio BAMs, please pass `-profile pacbio` so that the appropriate filters can
+be used:
 
 ```bash
 nextflow run nf-scomatic \
