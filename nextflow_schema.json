@@ -16,6 +16,21 @@
           "format": "file-path",
           "description": "Comma-separated samplesheet with columns 'donor_id', 'sample_id', and 'bam'."
         },
+        "celltypes": {
+          "type": "string",
+          "description": "Tab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'.",
+          "format": "file-path"
+        },
+        "genome": {
+          "type": "string",
+          "description": "Fasta file for genome build.",
+          "format": "file-path"
+        },
+        "bed": {
+          "type": "string",
+          "description": "BED of regions of interest.",
+          "format": "file-path"
+        },
         "location": {
           "type": "string",
           "enum": ["irods", "local"],
@@ -28,16 +43,6 @@
           "description": "Single cell RNA-seq (GEX) or single cell ATAC-seq (ATAC)?",
           "enum": ["GEX", "ATAC"]
         },
-        "celltypes": {
-          "type": "string",
-          "description": "Tab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'.",
-          "format": "file-path"
-        },
-        "genome": {
-          "type": "string",
-          "description": "Fasta file for genome build.",
-          "format": "file-path"
-        },
         "subset_bed": {
           "type": "string",
           "description": "Optionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)!",
@@ -46,11 +51,6 @@
         "ignore_base_quality": {
           "type": "boolean",
           "description": "Optionally ignore base quality scores in the BAM. The pipeline will artificially set the quality to the maximum value for all bases, to circumvent SComatic's filtering."
-        },
-        "bed": {
-          "type": "string",
-          "description": "BED of regions of interest.",
-          "format": "file-path"
         },
         "mutations": {
           "type": "string",
@@ -109,7 +109,7 @@
         "min_af": {
           "type": "number",
           "description": "Minimum alt allele fraction to consider a genomic site for further analysis.",
-          "default": 0.0
+          "default": 0
         },
         "min_dp": {
           "type": "integer",
@@ -142,7 +142,7 @@
         "max_cell_types": {
           "type": "number",
           "description": "Maximum number of celltypes carrying a mutation to make a somatic call.",
-          "default": 1.0
+          "default": 1
         }
       }
     },
