@@ -127,7 +127,13 @@ to make a somatic call. [default: 1]
 polymorphisms and recurrent artefacts. 
 - `--editing` [string]: RNA editing file to be used to remove RNA-editing sites. 
 
-## PacBio versus 10X
+## Profiles
+
+### `sanger_hg38`
+
+If you are
+
+### `pacbio`
 
 PacBio BAMs have different sequencing quality metrics than 10X BAMs. When using
 PacBio BAMs, please use the profile `--profile pacbio` so that it the filters 
