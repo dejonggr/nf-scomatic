@@ -48,8 +48,7 @@ Now you can run the pipeline using:
 ```bash
 nextflow run nf-scomatic \
   --samplesheet samplesheet.csv \
-  --celltypes celltypes.tsv \
-  --n_trim 5
+  --celltypes celltypes.tsv
 ```
 
 To get a full list of parameters, use the `--help` flag:
