@@ -48,7 +48,8 @@ Now you can run the pipeline using:
 ```bash
 nextflow run nf-scomatic \
   --samplesheet samplesheet.csv \
-  --celltypes celltypes.tsv
+  --celltypes celltypes.tsv \
+  -profile GRCh38,pacbio
 ```
 
 To get a full list of parameters, use the `--help` flag:
@@ -129,18 +130,26 @@ polymorphisms and recurrent artefacts.
 
 ## Profiles
 
-### `sanger_hg38`
+### `GRCh38`
 
-If you are
+If you are running this pipeline with GRCh38, you can use `--profile GRCh38` 
+and the pipeline will use the appropriate local files for `--genome`, `--pons`,
+`--editing`, and `--bed`:
+
+```bash
+nextflow run nf-scomatic \
+  --samplesheet samplesheet.csv \
+  --celltypes celltypes.tsv \
+  -profile GRCh38
+```
 
 ### `pacbio`
 
 PacBio BAMs have different sequencing quality metrics than 10X BAMs. When using
-PacBio BAMs, please use the profile `--profile pacbio` so that it the filters 
-can be fine-tuned:
+PacBio BAMs, please use the profile `--profile pacbio` so that the appropriate
+filters can be used:
 
 ```bash
-
 nextflow run nf-scomatic \
   --samplesheet samplesheet.csv \
   --celltypes celltypes.tsv \
@@ -150,17 +159,17 @@ nextflow run nf-scomatic \
 This sets the parameters `--ignore_base_quality` and `--min_MQ 60`. These
 differences are explained below.
 
-### Base quality
+#### Base quality
 
 In long-read sequencing data from PacBio, base-level quality scores are not
-meaningful and the filled may be filled with placeholders (!) or omitted (*).
+meaningful and the may be filled with placeholders (!) or omitted (*).
 Because SComatic filters on base quality (BQ), these placeholders can lead all 
 reads to be filtered out. In order to prevent this, you must set
 `--ignore_base_quality` when running `nf-scomatic` on PacBio samples. This will
 replace the placeholder characters in the base quality column with the maximum
 value to prevent filtering.
 
-### Mapping quality
+#### Mapping quality
 
 Additionally, the default minimum mapping quality in the SComatic pipeline is 
 255. However, the minimum mapping quality for PacBio reads is capped at 60,
