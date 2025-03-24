@@ -155,22 +155,6 @@ polymorphisms and recurrent artefacts.
 
 ## Profiles
 
-### `GRCh38`
-
-If you are running this pipeline with GRCh38, you can use `-profile GRCh38` 
-and the pipeline will use the appropriate local files for `--genome`, `--pons`,
-`--editing`, and `--bed`:
-
-```bash
-nextflow run nf-scomatic \
-  --samplesheet samplesheet.csv \
-  --celltypes celltypes.tsv \
-  -profile GRCh38
-```
-
-If this does not work for you (e.g. due to permission issues), see the above
-section on reference files. You will have to manually download these yourself.
-
 ### `pacbio`
 
 PacBio BAMs have different sequencing quality metrics than 10X BAMs. When using
@@ -203,3 +187,19 @@ Additionally, the default minimum mapping quality in the SComatic pipeline is
 255. However, the minimum mapping quality for PacBio reads is capped at 60,
 so in order to prevent them being filtered out you must lower the `--min_MQ` to 
 60.
+
+### `GRCh38`
+
+If you are running this pipeline with GRCh38, you can use `-profile GRCh38` 
+and the pipeline will use the appropriate local files for `--genome`, `--pons`,
+`--editing`, and `--bed`:
+
+```bash
+nextflow run nf-scomatic \
+  --samplesheet samplesheet.csv \
+  --celltypes celltypes.tsv \
+  -profile GRCh38
+```
+
+If this does not work for you (e.g. due to permission issues), see the above
+section on reference files. You will have to manually download these yourself.
