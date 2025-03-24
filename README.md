@@ -3,7 +3,7 @@
 ## Overview
 
 This is a Nextflow implementation of [SComatic](github.com/cortes-ciriano-lab/SComatic).
-Please refer to the original github for more information about the pipeline.
+Please refer to the original GitHub for more information about the pipeline.
 
 ## Usage
 
@@ -59,6 +59,10 @@ nextflow run nf-scomatic \
   --samplesheet samplesheet.csv \
   --celltypes celltypes.tsv \
   --genome genome.fa \
+  --pons data/PoN.scRNAseq.hg38.tsv \
+  --editing data/AllEditingSites.hg38.txt \
+  --bed data/UCSC.k100_umap.without.repeatmasker.bed \
+  --out_dir out/ \
   -profile pacbio
 ```
 
