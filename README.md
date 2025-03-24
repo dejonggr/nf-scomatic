@@ -44,11 +44,15 @@ or `{sample_id}_{barcode}-1` for 10X BAMs.
 ### Reference files
 
 Several reference files must be downloaded from the [SComatic](github.com/cortes-ciriano-lab/SComatic)
-GitHub and elsewhere to be used as inputs:
+GitHub to be used as inputs:
 
 - Panel of normals files (`--pons`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/PoNs).
 - RNA editing files (`--editing`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/tree/main/RNAediting).
-- A repeat-masked BED containg high quality regions of the genome (`--bed`) can be found at `/nfs/team205/kp9/nextflow/scomatic/SComatic/bed_files_of_interest/UCSC.k100_umap.without.repeatmasker.bed`.
+
+Additionally, it is recommended to only look in high-quality regions of the
+human genome (masking repeats, etc...). This can be set with the `--bed`
+parameter. A repeat-masked BED containg high quality regions of the genome
+can be found at `/lustre/scratch125/casm/team268im/at31/nextflow/nf-scomatic/data/GRCh38/UCSC.k100_umap.without.repeatmasker.bed`.
 
 ## Run
 
@@ -76,14 +80,21 @@ nextflow run nf-scomatic --help
 
 ### Required options
 
+The following parameters must be passed:
+
+- `--samplesheet`
+- `--celltypes`
+- `--genome`
+- `--pons`
+- `--editing`
+
+### Input/output options
+
 - `--samplesheet` [string]: Comma-separated samplesheet with columns 'donor_id',
 'sampel_id', and 'bam'.
 - `--celltypes` [string]: Tab-separated file mapping cell barcodes to celltype
 information, with columns 'Index' and 'Cell_type'. 
 - `--genome`  [string]: Fasta file for the genome build.
-
-### Input/output options
-
 - `--location` [string]: Are the BAMs saved locally or on iRODs? [default:
 local] (accepted: local, irods)
 - `--out_dir` [string]: Output directory. [default: out/] 
