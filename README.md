@@ -41,6 +41,15 @@ PB_panel_AX001_CCAAATTCTATCACCA NK_cell
 The `Index` column must be in the format `{sample_id}_{barcode}` for PacBio BAMs
 or `{sample_id}_{barcode}-1` for 10X BAMs. 
 
+### Reference files
+
+Several reference files must be downloaded from the [SComatic](github.com/cortes-ciriano-lab/SComatic)
+GitHub and elsewhere to be used as inputs:
+
+- Panel of normals files (`--pons`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/PoNs).
+- RNA editing files (`--editing`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/tree/main/RNAediting).
+- A repeat-masked BED containg high quality regions of the genome (`--bed`) can be found at `/nfs/team205/kp9/nextflow/scomatic/SComatic/bed_files_of_interest/UCSC.k100_umap.without.repeatmasker.bed`.
+
 ## Run
 
 Now you can run the pipeline using:
@@ -49,7 +58,8 @@ Now you can run the pipeline using:
 nextflow run nf-scomatic \
   --samplesheet samplesheet.csv \
   --celltypes celltypes.tsv \
-  -profile GRCh38,pacbio
+  --genome genome.fa \
+  -profile pacbio
 ```
 
 To get a full list of parameters, use the `--help` flag:
@@ -64,7 +74,7 @@ nextflow run nf-scomatic --help
 
 - `--samplesheet` [string]: Comma-separated samplesheet with columns 'donor_id',
 'sampel_id', and 'bam'.
-- `celltypes` [string]: Tab-separated file mapping cell barcodes to celltype
+- `--celltypes` [string]: Tab-separated file mapping cell barcodes to celltype
 information, with columns 'Index' and 'Cell_type'. 
 - `--genome`  [string]: Fasta file for the genome build.
 
@@ -83,7 +93,7 @@ all bases to circumvent SComatic's filtering.
 - `--bed` [string]: BED of regions of interest.
 - `--mutations` [string]: A folder with prior SComatic mutations output.
 - `--publish_celltype_bams` [boolean]: Publish the celltype-split BAMs to the
-`celltype_bams` subdirectory? [default: false]
+`celltype_bams/` subdirectory? [default: false]
 
 ### SComatic options - SplitBamCeltypes
 
@@ -142,6 +152,9 @@ nextflow run nf-scomatic \
   --celltypes celltypes.tsv \
   -profile GRCh38
 ```
+
+If this does not work for you (e.g. due to permission issues), see the above
+section on reference files. You will have to manually download these yourself.
 
 ### `pacbio`
 
