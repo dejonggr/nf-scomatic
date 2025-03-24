@@ -19,7 +19,7 @@
         "location": {
           "type": "string",
           "enum": ["irods", "local"],
-          "description": "Location of the input files.",
+          "description": "Are the BAMs saved locally or on iRODs?",
           "default": "irods"
         },
         "modality": {
@@ -63,7 +63,7 @@
         },
         "out_dir": {
           "type": "string",
-          "default": "./",
+          "default": "out/",
           "description": "Output directory."
         }
       },
@@ -109,7 +109,7 @@
         "min_af": {
           "type": "number",
           "description": "Minimum alt allele fraction to consider a genomic site for further analysis.",
-          "default": 0.0
+          "default": 0
         },
         "min_dp": {
           "type": "integer",
@@ -142,7 +142,7 @@
         "max_cell_types": {
           "type": "number",
           "description": "Maximum number of celltypes carrying a mutation to make a somatic call.",
-          "default": 1.0
+          "default": 1
         }
       }
     },

@@ -401,17 +401,6 @@ process bamToGenotype {
 workflow STEP1 {
   main:
 
-    // validate parameters
-    validateParameters()
-
-    // Make sure all the input files actually exist
-    if (params.samplesheet == null) {
-      error "Please provide a samplesheet CSV file via --samplesheet"
-    }
-    if (params.celltypes == null) {
-      error "Please provide a cell types TSV file via --celltypes"
-    }
-
     // Load the mapping as a CSV, skipping the one line of header for ease of use
     // Split the BAM file into its parent directory and the actual file name
     // As the parent directory is used both by irods and local for finding the BAI
