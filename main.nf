@@ -416,11 +416,6 @@ workflow STEP1 {
     allCelltypes = Channel.fromPath(params.celltypes, checkIfExists: true)
     fasta = Channel.fromPath(params.genome, checkIfExists: true)
     fai = Channel.fromPath(params.genome+".fai", checkIfExists: true)
-
-    // Check the modality
-    if (!(params.modality in ["GEX", "ATAC"])) {
-      error "Unknown modality, must be GEX or ATAC"
-    }
     
     // Sanitise the samplesheet to just samples that show up in the cell types file
     // To do this, we need a list of sample IDs from the cell type file
@@ -430,13 +425,18 @@ workflow STEP1 {
     // Then glue it back together with _ as the delimiter
     // The equivalent of "_".join(VARIABLE.split("_")[:-1]) in python
     celltypeSamples = allCelltypes
-      .splitCsv(skip: 1)
-      .map({it -> it[0].split("_")[0..-2].join("_")})
+      .splitCsv(header: true, sep: "\t")
+      .map({row -> row.sample_id})
       .unique()
 
     // Doing a join here keeps the intersection of the sample IDs
     // That show up in both the samplesheet info and our parsed celltype sample list
     samplesheet = samplesheet.join(celltypeSamples)
+    if ( !samplesheet ) {
+        log.error("ERROR: Sample IDs in the samplesheet do not match any in the celltypes file.")
+        System.exit(1)
+    }
+
     if (params.location == "irods") {
       // Download all the samplesheet from irods - yields a sample/donor/BAM/BAI tuple
       sampleBams = irods(samplesheet)
@@ -455,7 +455,7 @@ workflow STEP1 {
     samples = sampleBams
       .map({it -> it[0]})
       .combine(allCelltypes)
-    
+
     // Can now search the cell types file for each of the sample IDs
     sampleCelltypes = getSampleCelltypes(samples)
     
@@ -536,13 +536,13 @@ workflow genotypes {
     cellGenotypes = bamToGenotype(indexedCelltypeBams)
 }
 
-// The main scomatic workflow
+// main scomatic workflow
 workflow {
 
-  // Validate the parameters
+  // validate the parameters
   validateParameters()
 
-  // Print a summary of supplied parameters
+  // print a summary of supplied parameters
   log.info paramsSummaryLog(workflow)
 
   // Some inputs that do not matter to step one, and as such are absent there

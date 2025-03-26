@@ -26,17 +26,16 @@ the `bam` value is a local path, instead of an iRODS path, please pass
 ### Celltypes
 
 You must also prepare a tab-delimited file containing the celltype annotations, 
-with columns `Index` and `Cell_type`.
+with columns `sample_id`, `Index` and `Cell_type`. It should look like this:
 
-```
-Index   Cell_type
-PB_panel_KX004_GAACTAAGAACTCCCT NK_cell
-PB_WT_KX004_AGAGCTGGACCGTGAC    Monocyte
-PB_panel_KX004_GCCTCTCCTGTTAGGG B_cell
-PB_panel_AX001_CAAAGCTACCAGACCC T_cells
-PB_WT_AX001_CCGTACGGATGGGTTT    NK_cell
-PB_panel_AX001_CCAAATTCTATCACCA NK_cell
-```
+| sample_id       | Index           | Cell_type |
+|----------------|----------------|-----------|
+| PB_panel_KX004 | GAACTAAGAACTCCCT | NK_cell   |
+| PB_WT_KX004    | AGAGCTGGACCGTGAC | Monocyte  |
+| PB_panel_KX004 | GCCTCTCCTGTTAGGG | B_cell    |
+| PB_panel_AX001 | CAAAGCTACCAGACCC | T_cells   |
+| PB_WT_AX001    | CCGTACGGATGGGTTT | NK_cell   |
+| PB_panel_AX001 | CCAAATTCTATCACCA | NK_cell   |
 
 The `Index` column must be in the format `{sample_id}_{barcode}` for PacBio BAMs
 or `{sample_id}_{barcode}-1` for 10X BAMs. 
