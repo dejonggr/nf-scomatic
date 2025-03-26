@@ -144,7 +144,7 @@ process splitBams {
 // Merge the per-sample BAMs for each cell type into one per-donor file
 // Pass the donor and cell type along for a while for downstream process use
 process mergeCelltypeBams {
-  tag "${donor_id}"
+  tag "${donor_id}_${celltype}"
   label "normal4core"
   input:
     tuple val(donor_id), val(celltype), path(bams), path(bais)
@@ -158,7 +158,7 @@ process mergeCelltypeBams {
 
 // Index the donor-celltype BAMs, returning both the BAM and BAI
 process indexCelltypeBams {
-  tag "${donor_id}"
+  tag "${donor_id}_${celltype}"
   label "normal4core"
   publishDir "${params.out_dir}/${donor_id}/celltype_bams/", 
     mode: "copy",
@@ -180,7 +180,7 @@ process indexCelltypeBams {
 // There can sometimes be no output file, so specify it as optional
 // Can't pass out donor info because tuples and optional don't get along
 process bamToTsv {
-  tag "${donor_id}"
+  tag "${donor_id}_${celltype}"
   cpus 16
   label "long16core"
   input:
@@ -338,7 +338,7 @@ process callableSitesCellType {
 // Get callable sites on a cell level
 // Mirror argument values based on earlier bamToTsv step for consistency
 process callableSitesCell {
-  tag "${donor_id}"
+  tag "${donor_id}_${celltype}"
   label "week16core10gb"
   publishDir "${params.out_dir}/${donor_id}/cell_callable_sites", mode:"copy"
   input:
@@ -366,7 +366,7 @@ process callableSitesCell {
 // Also the LSF config for this uses scratch to not pollute the drive with those files
 // (Even if they are just temporary and get removed at the end of the process)
 process bamToGenotype {
-  tag "${donor_id}"
+  tag "${donor_id}_${celltype}"
   label "long16core10gb"
   publishDir "${params.out_dir}/${donor_id}-genotypes", mode:"copy"
   input:
