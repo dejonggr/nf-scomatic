@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Nextflow implementation of [SComatic](github.com/cortes-ciriano-lab/SComatic).
+This is a Nextflow implementation of [SComatic](https://github.com/cortes-ciriano-lab/SComatic).
 Please refer to the original GitHub for more information about the pipeline.
 
 ## Usage
@@ -45,13 +45,9 @@ or `{sample_id}_{barcode}-1` for 10X BAMs.
 Several reference files must be downloaded from the [SComatic](github.com/cortes-ciriano-lab/SComatic)
 GitHub to be used as inputs:
 
-- Panel of normals files (`--pons`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/PoNs).
-- RNA editing files (`--editing`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/tree/main/RNAediting).
-
-Additionally, it is recommended to only look in high-quality regions of the
-human genome (masking repeats, etc...). This can be set with the `--bed`
-parameter. A repeat-masked BED containg high quality regions of the genome
-can be found at `/lustre/scratch125/casm/team268im/at31/nextflow/nf-scomatic/data/GRCh38/UCSC.k100_umap.without.repeatmasker.bed`.
+- Required: Panel of normals files (`--pons`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/PoNs).
+- Required: RNA editing files (`--editing`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/tree/main/RNAediting).
+- Recommended: High quality regions of the human genome (`--bed`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/bed_files_of_interest/UCSC.k100_umap.without.repeatmasker.bed).
 
 ## Run
 
@@ -202,3 +198,23 @@ nextflow run nf-scomatic \
 
 If this does not work for you (e.g. due to permission issues), see the above
 section on reference files. You will have to manually download these yourself.
+
+## Output
+
+An example of an output directory, for the sample `TX_WT_KX004`:
+
+```
+out/
+└── TX_WT_KX004
+    ├── cell_callable_sites
+    │   ├── TX_WT_KX004.B_cell.SitesPerCell.tsv
+    │   ├── TX_WT_KX004.Monocyte.SitesPerCell.tsv
+    │   ├── TX_WT_KX004.NK_cell.SitesPerCell.tsv
+    │   └── TX_WT_KX004.T_cells.SitesPerCell.tsv
+    ├── TX_WT_KX004.calling.step2.intersect.tsv
+    ├── TX_WT_KX004.calling.step2.pass.tsv
+    ├── TX_WT_KX004.calling.step2.tsv
+    ├── TX_WT_KX004.coverage_cell_count.per_chromosome.report.tsv
+    └── TX_WT_KX004.coverage_cell_count.report.tsv
+```
+
