@@ -21,7 +21,7 @@ look like this:
 
 The samplesheet must contain the columns `sample_id`, `donor_id`, and `bam`. If
 the `bam` value is a local path, instead of an iRODS path, please pass
-`--location local`. The `sample_id` values cannot contain dashes.
+`--location local`.
 
 ### Celltypes
 
@@ -37,8 +37,9 @@ with columns `sample_id`, `Index` and `Cell_type`. It should look like this:
 | PB_WT_AX001    | CCGTACGGATGGGTTT | NK_cell   |
 | PB_panel_AX001 | CCAAATTCTATCACCA | NK_cell   |
 
-The `Index` column must be in the format `{sample_id}_{barcode}` for PacBio BAMs
-or `{sample_id}_{barcode}-1` for 10X BAMs. 
+**N.B.** Make sure the barcodes here match those in your BAM files. For example,
+if the BAM files contain the `-1` suffix, include that here as well. You can 
+check the barcode formatting in the BAMs by looking at the `CB:Z` tag.
 
 ### Reference files
 
@@ -47,7 +48,7 @@ GitHub to be used as inputs:
 
 - Required: Panel of normals files (`--pons`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/PoNs).
 - Required: RNA editing files (`--editing`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/tree/main/RNAediting).
-- Recommended: High quality regions of the human genome (`--bed`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/bed_files_of_interest/UCSC.k100_umap.without.repeatmasker.bed).
+- Recommended: High quality regions of the human genome to intersect (`--bed`) can be found [here](https://github.com/cortes-ciriano-lab/SComatic/blob/main/bed_files_of_interest/UCSC.k100_umap.without.repeatmasker.bed).
 
 ## Run
 
@@ -84,6 +85,51 @@ The following parameters must be passed:
 - `--editing`
 
 ### Input/output options
+
+```ansi
+--help                    [2m[boolean, string] [0mShow the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed. [2m[0m
+--helpFull                [2m[boolean]         [0mShow the help message for all non-hidden parameters. [2m[0m
+--showHidden              [2m[boolean]         [0mShow all hidden parameters in the help message. This needs to be used in combination with `--help` or `--helpFull`. [2m[0m
+
+[4m[1mInput/output options[0m
+  --samplesheet           [2m[string]  [0mComma-separated samplesheet with columns 'donor_id', 'sample_id', and 'bam'. [2m[0m
+  --celltypes             [2m[string]  [0mTab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'. [2m[0m
+  --genome                [2m[string]  [0mFasta file for genome build. [2m[0m
+  --bed                   [2m[string]  [0mBED of regions of interest. [2m[0m
+  --location              [2m[string]  [0mAre the BAMs saved locally or on iRODs? [2m (accepted: irods, local) [default: irods] [0m
+  --modality              [2m[string]  [0mSingle cell RNA-seq (GEX) or single cell ATAC-seq (ATAC)? [2m (accepted: GEX, ATAC) [default: GEX] [0m
+  --subset_bed            [2m[string]  [0mOptionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)! [2m[0m
+  --ignore_base_quality   [2m[boolean] [0mOptionally ignore base quality scores in the BAM. The pipeline will artificially set the quality to the maximum value for all bases, to circumvent SComatic's 
+filtering. [2m[0m 
+  --mutations             [2m[string]  [0mA folder with prior scomatic mutations output. [2m[0m
+  --publish_celltype_bams [2m[boolean] [0mPublish the celltype-split BAMs to the celltype_bams/ subdirectory? [2m[0m
+  --out_dir               [2m[string]  [0mOutput directory. [2m[default: ./] [0m
+
+[4m[1mSComatic options - SplitBamCeltypes[0m
+  --max_nM                [2m[integer] [0mMaximum number of mismatches permitted to consider reads  for analysis. By default, this filter is switched off, although we recommed using --max_nM 5. If 
+applied, this filter requires having the nM tag in the bam file. [2m[0m 
+  --max_NH                [2m[integer] [0mMaximum number of alignment hits permitted to consider reads for analysis. By default, this filter is switched off, although we recommend using --max_NH 1. This 
+filter requires having the NH tag in the bam file. [2m[0m 
+  --min_MQ                [2m[integer] [0mMinimum mapping quality required to consider reads for analysis. Set this value to 0 to switch this filter off. --min_MQ 255 is recommended for RNA data, and 
+--min_MQ 30 for DNA data. [2m[default: 255] [0m 
+  --n_trim                [2m[integer] [0mNumber of bases trimmed by setting the base quality to 0 at the beginning and end of each read. [2m[default: 0] [0m
+
+[4m[1mSComatic options - BaseCellCounter[0m
+  --min_ac                [2m[integer] [0mMinimum alt count to consider a genomic site for further analysis. [2m[default: 0] [0m
+  --min_af                [2m[number]  [0mMinimum alt allele fraction to consider a genomic site for further analysis. [2m[default: 0] [0m
+  --min_dp                [2m[integer] [0mMinimum coverage to consider a genomic site for further analysis. [2m[default: 5] [0m
+  --min_cc                [2m[integer] [0mMinimum number of cells required to consider a genomic site for further analysis. [2m[default: 5] [0m
+  --min_bq                [2m[integer] [0mMinimum base quality permited for the base counts. [2m[default: 20] [0m
+  --max_dp                [2m[integer] [0mMaximum number of reads per genomic site that are read by pysam pileup (to save time and memory. Set this value to 0 to switch this filter off (recommended for 
+high-depth sequencing). [2m[default: 8000] [0m 
+
+[4m[1mSComatic options - BaseCellCalling.step1[0m
+  --max_cell_types        [2m[number] [0mMaximum number of celltypes carrying a mutation to make a somatic call. [2m[default: 1] [0m
+
+[4m[1mSComatic options - BaseCellCalling.step2[0m
+  --pons                  [2m[string] [0mPanel of normals (PoN) file to be used to remove germline polymorphisms and recurrent artefacts. [2m[0m
+  --editing               [2m[string] [0mRNA editing file to be used to remove RNA-editing sites. [2m[0m
+```
 
 - `--samplesheet` [string]: Comma-separated samplesheet with columns 'donor_id',
 'sampel_id', and 'bam'.
