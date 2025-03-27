@@ -79,7 +79,6 @@ process ignore_base_quality {
   script:
     """
     mkdir ignore_bq/
-    module load samtools-1.19.2/python-3.11.6
     samtools view -h ${bam} |
     awk 'BEGIN{OFS="\\t"} /^@/ {print; next} { \$11 = ""; for (i=1; i<=length(\$10); i++) \$11 = \$11 "~"; print }' |
     samtools view -bS - \
