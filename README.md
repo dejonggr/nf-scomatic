@@ -87,48 +87,61 @@ The following parameters must be passed:
 ### Input/output options
 
 ```ansi
---help                    [2m[boolean, string] [0mShow the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed. [2m[0m
---helpFull                [2m[boolean]         [0mShow the help message for all non-hidden parameters. [2m[0m
---showHidden              [2m[boolean]         [0mShow all hidden parameters in the help message. This needs to be used in combination with `--help` or `--helpFull`. [2m[0m
+Script started on 2025-03-27 15:22:15+00:00 [TERM="xterm-256color" TTY="/dev/pts/1196" COLUMNS="161" LINES="31"]
+ESC[33mNextflow 24.10.5 is available - Please consider updating your version to itESC(BESC[m
 
-[4m[1mInput/output options[0m
-  --samplesheet           [2m[string]  [0mComma-separated samplesheet with columns 'donor_id', 'sample_id', and 'bam'. [2m[0m
-  --celltypes             [2m[string]  [0mTab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'. [2m[0m
-  --genome                [2m[string]  [0mFasta file for genome build. [2m[0m
-  --bed                   [2m[string]  [0mBED of regions of interest. [2m[0m
-  --location              [2m[string]  [0mAre the BAMs saved locally or on iRODs? [2m (accepted: irods, local) [default: irods] [0m
-  --modality              [2m[string]  [0mSingle cell RNA-seq (GEX) or single cell ATAC-seq (ATAC)? [2m (accepted: GEX, ATAC) [default: GEX] [0m
-  --subset_bed            [2m[string]  [0mOptionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)! [2m[0m
-  --ignore_base_quality   [2m[boolean] [0mOptionally ignore base quality scores in the BAM. The pipeline will artificially set the quality to the maximum value for all bases, to circumvent SComatic's 
-filtering. [2m[0m 
-  --mutations             [2m[string]  [0mA folder with prior scomatic mutations output. [2m[0m
-  --publish_celltype_bams [2m[boolean] [0mPublish the celltype-split BAMs to the celltype_bams/ subdirectory? [2m[0m
-  --out_dir               [2m[string]  [0mOutput directory. [2m[default: ./] [0m
+ESC[1mESC[38;5;232mESC[48;5;43m N E X T F L O W ESC[0;2m  ~  ESC[mversion 24.10.4ESC[m
+ESC[K
+LaunchingESC[35m `./main.nf` ESC[0;2m[ESC[0;1;36mchaotic_kimuraESC[0;2m] DSL2 - ESC[36mrevision: ESC[0;36mbe0fcb1af9ESC[m
+ESC[K
+--help                    ESC[2m[boolean, string] ESC[0mShow the help message for all top level parameters. When a parameter is given to `--help`, the full help message of that parameter will be printed. ESC[2mESC[0m
+--helpFull                ESC[2m[boolean]         ESC[0mShow the help message for all non-hidden parameters. ESC[2mESC[0m
+--showHidden              ESC[2m[boolean]         ESC[0mShow all hidden parameters in the help message. This needs to be used in combination with `--help` or `--helpFull`. ESC[2mESC[0m
 
-[4m[1mSComatic options - SplitBamCeltypes[0m
-  --max_nM                [2m[integer] [0mMaximum number of mismatches permitted to consider reads  for analysis. By default, this filter is switched off, although we recommed using --max_nM 5. If 
-applied, this filter requires having the nM tag in the bam file. [2m[0m 
-  --max_NH                [2m[integer] [0mMaximum number of alignment hits permitted to consider reads for analysis. By default, this filter is switched off, although we recommend using --max_NH 1. This 
-filter requires having the NH tag in the bam file. [2m[0m 
-  --min_MQ                [2m[integer] [0mMinimum mapping quality required to consider reads for analysis. Set this value to 0 to switch this filter off. --min_MQ 255 is recommended for RNA data, and 
---min_MQ 30 for DNA data. [2m[default: 255] [0m 
-  --n_trim                [2m[integer] [0mNumber of bases trimmed by setting the base quality to 0 at the beginning and end of each read. [2m[default: 0] [0m
+ESC[4mESC[1mInput/output optionsESC[0m
+  --samplesheet           ESC[2m[string]  ESC[0mComma-separated samplesheet with columns 'donor_id', 'sample_id', and 'bam'. ESC[2mESC[0m
+  --celltypes             ESC[2m[string]  ESC[0mTab-separated file mapping cell barcodes to celltype information. It must contain at least the columns 'Index' and 'Cell_type'. ESC[2mESC[0m
+  --genome                ESC[2m[string]  ESC[0mFasta file for genome build. ESC[2mESC[0m
+  --bed                   ESC[2m[string]  ESC[0mBED of regions of interest. ESC[2mESC[0m
+  --location              ESC[2m[string]  ESC[0mAre the BAMs saved locally or on iRODs? ESC[2m (accepted: irods, local) [default: irods] ESC[0m
+  --modality              ESC[2m[string]  ESC[0mSingle cell RNA-seq (GEX) or single cell ATAC-seq (ATAC)? ESC[2m (accepted: GEX, ATAC) [default: GEX] ESC[0m
+  --subset_bed            ESC[2m[string]  ESC[0mOptionally subset the BAMs before filtering with a BED file. Make sure the 'chr' conventions match (ie. chr1 or 1)! ESC[2mESC[0m
+  --ignore_base_quality   ESC[2m[boolean] ESC[0mOptionally ignore base quality scores in the BAM. The pipeline will artificially set the quality to the maximum value for all bases, to circumvent SComatic's 
+filtering. ESC[2mESC[0m 
+  --mutations             ESC[2m[string]  ESC[0mA folder with prior scomatic mutations output. ESC[2mESC[0m
+  --publish_celltype_bams ESC[2m[boolean] ESC[0mPublish the celltype-split BAMs to the celltype_bams/ subdirectory? ESC[2mESC[0m
+  --out_dir               ESC[2m[string]  ESC[0mOutput directory. ESC[2m[default: ./] ESC[0m
 
-[4m[1mSComatic options - BaseCellCounter[0m
-  --min_ac                [2m[integer] [0mMinimum alt count to consider a genomic site for further analysis. [2m[default: 0] [0m
-  --min_af                [2m[number]  [0mMinimum alt allele fraction to consider a genomic site for further analysis. [2m[default: 0] [0m
-  --min_dp                [2m[integer] [0mMinimum coverage to consider a genomic site for further analysis. [2m[default: 5] [0m
-  --min_cc                [2m[integer] [0mMinimum number of cells required to consider a genomic site for further analysis. [2m[default: 5] [0m
-  --min_bq                [2m[integer] [0mMinimum base quality permited for the base counts. [2m[default: 20] [0m
-  --max_dp                [2m[integer] [0mMaximum number of reads per genomic site that are read by pysam pileup (to save time and memory. Set this value to 0 to switch this filter off (recommended for 
-high-depth sequencing). [2m[default: 8000] [0m 
+ESC[4mESC[1mSComatic options - SplitBamCeltypesESC[0m
+  --max_nM                ESC[2m[integer] ESC[0mMaximum number of mismatches permitted to consider reads  for analysis. By default, this filter is switched off, although we recommed using --max_nM 5. If 
+applied, this filter requires having the nM tag in the bam file. ESC[2mESC[0m 
+  --max_NH                ESC[2m[integer] ESC[0mMaximum number of alignment hits permitted to consider reads for analysis. By default, this filter is switched off, although we recommend using --max_NH 1. This 
+filter requires having the NH tag in the bam file. ESC[2mESC[0m 
+  --min_MQ                ESC[2m[integer] ESC[0mMinimum mapping quality required to consider reads for analysis. Set this value to 0 to switch this filter off. --min_MQ 255 is recommended for RNA data, and 
+--min_MQ 30 for DNA data. ESC[2m[default: 255] ESC[0m 
+  --n_trim                ESC[2m[integer] ESC[0mNumber of bases trimmed by setting the base quality to 0 at the beginning and end of each read. ESC[2m[default: 0] ESC[0m
 
-[4m[1mSComatic options - BaseCellCalling.step1[0m
-  --max_cell_types        [2m[number] [0mMaximum number of celltypes carrying a mutation to make a somatic call. [2m[default: 1] [0m
+ESC[4mESC[1mSComatic options - BaseCellCounterESC[0m
+  --min_ac                ESC[2m[integer] ESC[0mMinimum alt count to consider a genomic site for further analysis. ESC[2m[default: 0] ESC[0m
+  --min_af                ESC[2m[number]  ESC[0mMinimum alt allele fraction to consider a genomic site for further analysis. ESC[2m[default: 0] ESC[0m
+  --min_dp                ESC[2m[integer] ESC[0mMinimum coverage to consider a genomic site for further analysis. ESC[2m[default: 5] ESC[0m
+  --min_cc                ESC[2m[integer] ESC[0mMinimum number of cells required to consider a genomic site for further analysis. ESC[2m[default: 5] ESC[0m
+  --min_bq                ESC[2m[integer] ESC[0mMinimum base quality permited for the base counts. ESC[2m[default: 20] ESC[0m
+  --max_dp                ESC[2m[integer] ESC[0mMaximum number of reads per genomic site that are read by pysam pileup (to save time and memory. Set this value to 0 to switch this filter off (recommended for 
+high-depth sequencing). ESC[2m[default: 8000] ESC[0m 
 
-[4m[1mSComatic options - BaseCellCalling.step2[0m
-  --pons                  [2m[string] [0mPanel of normals (PoN) file to be used to remove germline polymorphisms and recurrent artefacts. [2m[0m
-  --editing               [2m[string] [0mRNA editing file to be used to remove RNA-editing sites. [2m[0m
+ESC[4mESC[1mSComatic options - BaseCellCalling.step1ESC[0m
+  --max_cell_types        ESC[2m[number] ESC[0mMaximum number of celltypes carrying a mutation to make a somatic call. ESC[2m[default: 1] ESC[0m
+
+ESC[4mESC[1mSComatic options - BaseCellCalling.step2ESC[0m
+  --pons                  ESC[2m[string] ESC[0mPanel of normals (PoN) file to be used to remove germline polymorphisms and recurrent artefacts. ESC[2mESC[0m
+  --editing               ESC[2m[string] ESC[0mRNA editing file to be used to remove RNA-editing sites. ESC[2mESC[0m
+
+ ESC[2m!! Hiding 3 param(s), use the `--showHidden` parameter to show them !!ESC[0m
+-ESC[2m----------------------------------------------------ESC[0m-
+
+
+Script done on 2025-03-27 15:22:19+00:00 [COMMAND_EXIT_CODE="0"]
 ```
 
 - `--samplesheet` [string]: Comma-separated samplesheet with columns 'donor_id',
