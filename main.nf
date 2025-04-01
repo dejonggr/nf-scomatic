@@ -151,7 +151,7 @@ process mergeCelltypeBams {
     tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
   script:
     """
-    samtools merge -@ {task.cpus} ${donor_id}.${celltype}.bam ${bams}
+    samtools merge -@ ${task.cpus} ${donor_id}.${celltype}.bam ${bams}
     """
 }
 
@@ -168,7 +168,7 @@ process indexCelltypeBams {
     tuple val(donor_id), val(celltype), path(bam), path("*.bam.bai")
   script:
     """
-    samtools index -@ {task.cpus} ${bam}
+    samtools index -@ ${task.cpus} ${bam}
     """
 }
 
