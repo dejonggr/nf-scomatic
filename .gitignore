@@ -1,4 +1,2 @@
-.nextflow
-.nextflow.*
-data/
 test/
+data/
