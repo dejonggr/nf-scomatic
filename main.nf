@@ -164,7 +164,7 @@ process mergeCelltypeBams {
   script:
     """
     samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1; done)
-    /home/ubuntu/software/mergebams/target/release/mergebams \\
+    mergebams \\
           -i ${bams} \\
           -l $samples \\
           -b ${barcodes} \\
