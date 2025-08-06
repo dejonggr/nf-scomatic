@@ -1,2 +1,5 @@
 test/
 data/
+resources/AllEditingSites.hg38.txt
+resources/PoN.scRNAseq.hg38.tsv
+resources/UCSC.k100_umap.without.repeatmasker.bed

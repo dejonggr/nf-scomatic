@@ -113,6 +113,7 @@ process getSampleCelltypes {
 // As such, this emits BAM/BAI "list of lists", which have all the necessary info
 // (sample.donor.celltype) embedded in the file names
 // The typical scomatic convention is sample.celltype, so I have to rename files
+// In script: Save barcodes as csvs for mergebams; get list of tsv
 process splitBams {
   tag "${sample_id}"
   label "long"
@@ -121,6 +122,7 @@ process splitBams {
   output:
     path("output/${sample_id}.${donor_id}*.bam"), emit: "bam"
     path("output/${sample_id}.${donor_id}*.bam.bai"), emit: "bai"
+    path("output/${sample_id}.${donor_id}*.barcodes.tsv"), emit: "barcodes"
   script:
     def nm_arg = params.max_nM == null ? "" : "--max_nM ${params.max_nM}"
     def nh_arg = params.max_NH == null ? "" : "--max_NH ${params.max_NH}"
@@ -137,21 +139,38 @@ process splitBams {
       new_file=\$(echo \$file | sed "s/${sample_id}/${sample_id}.${donor_id}/g")
       mv \$file \$new_file
     done
+    for bamfile in output/${sample_id}.${donor_id}*.bam ; do
+      tsvfile=\${bamfile%.bam}.barcodes.tsv
+      samtools view -@ ${task.cpus} \$bamfile | \\
+        grep -o 'CB:Z:[^[:space:]]*' | \\
+        cut -d: -f3 | \\
+        sort -u | \\
+        awk '{print "${sample_id}_" \$1}' > \$tsvfile
+    done
+
     """
 }
 
 // Merge the per-sample BAMs for each cell type into one per-donor file
 // Pass the donor and cell type along for a while for downstream process use
+// also rename output to match the remainder of the pipeline (mv)
 process mergeCelltypeBams {
   tag "${donor_id}_${celltype}"
   label "normal4core"
   input:
-    tuple val(donor_id), val(celltype), path(bams), path(bais)
+    tuple val(donor_id), val(celltype), path(bams), path(bais), path(barcodes)
   output:
     tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
   script:
     """
-    samtools merge -@ ${task.cpus} ${donor_id}.${celltype}.bam ${bams}
+    samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1; done)
+    /home/ubuntu/software/mergebams/target/release/mergebams \\
+          -i ${bams} \\
+          -l $samples \\
+          -b ${barcodes} \\
+          -o . \\
+          -t ${task.cpus}
+    mv merged_bam.bam ${donor_id}.${celltype}.bam
     """
 }
 
@@ -181,7 +200,7 @@ process indexCelltypeBams {
 process bamToTsv {
   tag "${donor_id}_${celltype}"
   cpus 16
-  label "long16core"
+  label "week16core10gb"
   input:
     tuple val(donor_id), val(celltype), path(bam), path(bai), path(fasta), path(fai)
   output:
@@ -489,14 +508,23 @@ workflow STEP1 {
     bai = sampleFiles.bai
       .flatten()
       .map({file -> [file.getName().split('\\.bam')[0], file]})
+    barcodes = sampleFiles.barcodes
+      .flatten()
+      .map({file -> [file.getBaseName().replaceAll(/\.barcodes$/, ''), file]})
     
     // We can now safely join the two file lists on the index to combine correctly
     // Replace the index with two entries, one for donor, one for cell type
     // And then group up all the files from a given donor and cell type for merging
     sampleCelltypeBams = bam
       .join(bai)
-      .map({name, file, ind -> [name.split('\\.')[1], name.split('\\.')[2], file, ind]})
-      .groupTuple(by: [0,1])
+      .join(barcodes)
+      .map { name, bam, bai, barcodes ->
+        def parts = name.split('\\.')
+        def sample = parts[0]
+        def donor = parts[1]
+        def celltype = parts[2]
+        tuple(sample, donor, celltype, bam, bai, barcodes)
+      }
     unindexedCelltypeBams = mergeCelltypeBams(sampleCelltypeBams)
     
     // Index the cell type BAMs, and then add the genome to the resulting tuple
@@ -599,4 +627,5 @@ workflow {
   cellSitesInput = indexedCelltypeBams.combine(unfilteredMutationsClean, by: 0)
   // And now we can get cell level callable sites
   cellSites = callableSitesCell(cellSitesInput)
+  // Do genotype calling as well
 }
