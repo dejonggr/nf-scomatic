@@ -162,7 +162,7 @@ process mergeCelltypeBams {
     tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
   script:
     """
-    samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1; done | paste -sd, -)
+    samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1 | sed 's/\$/_/'; done | paste -sd, -)
     bam_list=\$(echo ${bams} | tr ' ' ',')
     barcode_list=\$(echo ${barcodes} | tr ' ' ',')
 
@@ -183,7 +183,7 @@ process mergeCelltypeBams {
 // Index the donor-celltype BAMs, returning both the BAM and BAI
 process indexCelltypeBams {
   tag "${donor_id}_${celltype}"
-  label "normal4core"
+  label "long16core10gb"
   publishDir "${params.out_dir}/${donor_id}/celltype_bams/", 
     mode: "copy",
     enabled: params.publish_celltype_bams
@@ -193,9 +193,9 @@ process indexCelltypeBams {
     tuple val(donor_id), val(celltype), path(bam), path("*.bam.bai")
   script:
     """
-    samtools sort -@ ${task.cpus} --write-index -o ${bam}.tmp.bam ${bam}
+    samtools sort -@ ${task.cpus} -o ${bam}.tmp.bam ${bam}
     mv ${bam}.tmp.bam ${bam}
-    mv ${bam}.tmp.bam.bai ${bam}.bai
+    samtools index -@ ${task.cpus} ${bam}
     """
 }
 
