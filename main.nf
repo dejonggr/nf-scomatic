@@ -144,8 +144,7 @@ process splitBams {
       samtools view -@ ${task.cpus} \$bamfile | \\
         grep -o 'CB:Z:[^[:space:]]*' | \\
         cut -d: -f3 | \\
-        sort -u | \\
-        awk '{print "${sample_id}_" \$1}' > \$tsvfile
+        sort -u > \$tsvfile
     done
 
     """
@@ -163,14 +162,21 @@ process mergeCelltypeBams {
     tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
   script:
     """
-    samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1; done)
+    samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1; done | paste -sd, -)
+    bam_list=\$(echo ${bams} | tr ' ' ',')
+    barcode_list=\$(echo ${barcodes} | tr ' ' ',')
+
+    echo "Samples: \$samples"
+    echo "BAM list: \$bam_list"
+    echo "Barcode list: \$barcode_list"
+
     mergebams \\
-          -i ${bams} \\
-          -l $samples \\
-          -b ${barcodes} \\
+          -i \$bam_list \\
+          -l \$samples \\
+          -b \$barcode_list \\
           -o . \\
           -t ${task.cpus}
-    mv merged_bam.bam ${donor_id}.${celltype}.bam
+    mv out_bam.bam ${donor_id}.${celltype}.bam
     """
 }
 
@@ -187,7 +193,9 @@ process indexCelltypeBams {
     tuple val(donor_id), val(celltype), path(bam), path("*.bam.bai")
   script:
     """
-    samtools index -@ ${task.cpus} ${bam}
+    samtools sort -@ ${task.cpus} --write-index -o ${bam}.tmp.bam ${bam}
+    mv ${bam}.tmp.bam ${bam}
+    mv ${bam}.tmp.bam.bai ${bam}.bai
     """
 }
 
@@ -518,13 +526,12 @@ workflow STEP1 {
     sampleCelltypeBams = bam
       .join(bai)
       .join(barcodes)
-      .map { name, bam, bai, barcodes ->
-        def parts = name.split('\\.')
-        def sample = parts[0]
-        def donor = parts[1]
-        def celltype = parts[2]
-        tuple(sample, donor, celltype, bam, bai, barcodes)
+      .map { name, file, ind, bc ->
+          def donor_id = name.split('\\.')[1]
+          def celltype = name.split('\\.')[2]
+          return [donor_id, celltype, file, ind, bc]
       }
+      .groupTuple(by: [0, 1])
     unindexedCelltypeBams = mergeCelltypeBams(sampleCelltypeBams)
     
     // Index the cell type BAMs, and then add the genome to the resulting tuple
@@ -629,3 +636,4 @@ workflow {
   cellSites = callableSitesCell(cellSitesInput)
   // Do genotype calling as well
 }
+
