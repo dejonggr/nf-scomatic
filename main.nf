@@ -113,16 +113,17 @@ process getSampleCelltypes {
 // As such, this emits BAM/BAI "list of lists", which have all the necessary info
 // (sample.donor.celltype) embedded in the file names
 // The typical scomatic convention is sample.celltype, so I have to rename files
-// In script: Save barcodes as csvs for mergebams; get list of tsv
+// Added sample flag to CBs; order impacts ID; could be more efficient e.g. split process between malignant and TME bams
+// GNU isn't present in container: parallel -j ${task.cpus} FlagBAMDash.py ::: output/${sample_id}*.bam
+
 process splitBams {
   tag "${sample_id}"
-  label "long"
+  label "week"
   input:
     tuple val(sample_id), val(donor_id), path(bam), path(bai), path(celltypes)
   output:
     path("output/${sample_id}.${donor_id}*.bam"), emit: "bam"
     path("output/${sample_id}.${donor_id}*.bam.bai"), emit: "bai"
-    path("output/${sample_id}.${donor_id}*.barcodes.tsv"), emit: "barcodes"
   script:
     def nm_arg = params.max_nM == null ? "" : "--max_nM ${params.max_nM}"
     def nh_arg = params.max_NH == null ? "" : "--max_NH ${params.max_NH}"
@@ -135,16 +136,15 @@ process splitBams {
       --min_MQ ${params.min_MQ} \\
       --n_trim ${params.n_trim} \\
       --outdir output $nm_arg $nh_arg
+
+    for file in output/${sample_id}*.bam; do
+      FlagBAMDash.py \$file
+      mv \${file%.*}-flagged.bam \$file
+    done
+    
     for file in output/${sample_id}* ; do
       new_file=\$(echo \$file | sed "s/${sample_id}/${sample_id}.${donor_id}/g")
       mv \$file \$new_file
-    done
-    for bamfile in output/${sample_id}.${donor_id}*.bam ; do
-      tsvfile=\${bamfile%.bam}.barcodes.tsv
-      samtools view -@ ${task.cpus} \$bamfile | \\
-        grep -o 'CB:Z:[^[:space:]]*' | \\
-        cut -d: -f3 | \\
-        sort -u > \$tsvfile
     done
 
     """
@@ -152,31 +152,16 @@ process splitBams {
 
 // Merge the per-sample BAMs for each cell type into one per-donor file
 // Pass the donor and cell type along for a while for downstream process use
-// also rename output to match the remainder of the pipeline (mv)
 process mergeCelltypeBams {
   tag "${donor_id}_${celltype}"
   label "normal4core"
   input:
-    tuple val(donor_id), val(celltype), path(bams), path(bais), path(barcodes)
+    tuple val(donor_id), val(celltype), path(bams), path(bais)
   output:
     tuple val(donor_id), val(celltype), path("${donor_id}.${celltype}.bam")
   script:
     """
-    samples=\$(for f in ${bams}; do basename \$f | cut -d. -f1 | sed 's/\$/_/'; done | paste -sd, -)
-    bam_list=\$(echo ${bams} | tr ' ' ',')
-    barcode_list=\$(echo ${barcodes} | tr ' ' ',')
-
-    echo "Samples: \$samples"
-    echo "BAM list: \$bam_list"
-    echo "Barcode list: \$barcode_list"
-
-    mergebams \\
-          -i \$bam_list \\
-          -l \$samples \\
-          -b \$barcode_list \\
-          -o . \\
-          -t ${task.cpus}
-    mv out_bam.bam ${donor_id}.${celltype}.bam
+    samtools merge -@ ${task.cpus} ${donor_id}.${celltype}.bam ${bams}
     """
 }
 
@@ -516,22 +501,14 @@ workflow STEP1 {
     bai = sampleFiles.bai
       .flatten()
       .map({file -> [file.getName().split('\\.bam')[0], file]})
-    barcodes = sampleFiles.barcodes
-      .flatten()
-      .map({file -> [file.getBaseName().replaceAll(/\.barcodes$/, ''), file]})
     
     // We can now safely join the two file lists on the index to combine correctly
     // Replace the index with two entries, one for donor, one for cell type
     // And then group up all the files from a given donor and cell type for merging
     sampleCelltypeBams = bam
       .join(bai)
-      .join(barcodes)
-      .map { name, file, ind, bc ->
-          def donor_id = name.split('\\.')[1]
-          def celltype = name.split('\\.')[2]
-          return [donor_id, celltype, file, ind, bc]
-      }
-      .groupTuple(by: [0, 1])
+      .map({name, file, ind -> [name.split('\\.')[1], name.split('\\.')[2], file, ind]})
+      .groupTuple(by: [0,1])
     unindexedCelltypeBams = mergeCelltypeBams(sampleCelltypeBams)
     
     // Index the cell type BAMs, and then add the genome to the resulting tuple
