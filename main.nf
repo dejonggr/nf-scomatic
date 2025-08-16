@@ -166,6 +166,7 @@ process mergeCelltypeBams {
 }
 
 // Index the donor-celltype BAMs, returning both the BAM and BAI
+// re-sort if necessary
 process indexCelltypeBams {
   tag "${donor_id}_${celltype}"
   label "long16core10gb"
@@ -178,8 +179,6 @@ process indexCelltypeBams {
     tuple val(donor_id), val(celltype), path(bam), path("*.bam.bai")
   script:
     """
-    samtools sort -@ ${task.cpus} -o ${bam}.tmp.bam ${bam}
-    mv ${bam}.tmp.bam ${bam}
     samtools index -@ ${task.cpus} ${bam}
     """
 }
