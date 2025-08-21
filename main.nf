@@ -113,9 +113,6 @@ process getSampleCelltypes {
 // As such, this emits BAM/BAI "list of lists", which have all the necessary info
 // (sample.donor.celltype) embedded in the file names
 // The typical scomatic convention is sample.celltype, so I have to rename files
-// Added sample flag to CBs; order impacts ID; could be more efficient e.g. split process between malignant and TME bams
-// GNU isn't present in container: parallel -j ${task.cpus} FlagBAMDash.py ::: output/${sample_id}*.bam
-
 process splitBams {
   tag "${sample_id}"
   label "week"
@@ -141,12 +138,11 @@ process splitBams {
       FlagBAMDash.py \$file
       mv \${file%.*}-flagged.bam \$file
     done
-    
+
     for file in output/${sample_id}* ; do
       new_file=\$(echo \$file | sed "s/${sample_id}/${sample_id}.${donor_id}/g")
       mv \$file \$new_file
     done
-
     """
 }
 
@@ -154,7 +150,7 @@ process splitBams {
 // Pass the donor and cell type along for a while for downstream process use
 process mergeCelltypeBams {
   tag "${donor_id}_${celltype}"
-  label "normal4core"
+  label "long4core"
   input:
     tuple val(donor_id), val(celltype), path(bams), path(bais)
   output:
@@ -166,10 +162,9 @@ process mergeCelltypeBams {
 }
 
 // Index the donor-celltype BAMs, returning both the BAM and BAI
-// re-sort if necessary
 process indexCelltypeBams {
   tag "${donor_id}_${celltype}"
-  label "long16core10gb"
+  label "long4core"
   publishDir "${params.out_dir}/${donor_id}/celltype_bams/", 
     mode: "copy",
     enabled: params.publish_celltype_bams
@@ -610,6 +605,4 @@ workflow {
   cellSitesInput = indexedCelltypeBams.combine(unfilteredMutationsClean, by: 0)
   // And now we can get cell level callable sites
   cellSites = callableSitesCell(cellSitesInput)
-  // Do genotype calling as well
 }
-

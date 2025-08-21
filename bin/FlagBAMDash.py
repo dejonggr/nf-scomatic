@@ -8,6 +8,10 @@ import os
 bampath = sys.argv[1]
 sample = os.path.splitext(bampath)[0]
 
+# non-specific character stripping in SComatic bamtotsv
+relabled_sample = sample.replace("-", "_") 
+relabled_sample = relabled_sample.replace("output/", "")
+
 #open up the original bam, and the new one which will have CB flagged
 bamfile = pysam.AlignmentFile(bampath, "rb")
 tweaked = pysam.AlignmentFile(sample+"-flagged.bam", "wb", template=bamfile)
@@ -21,7 +25,7 @@ for read in bamfile.fetch():
             read.set_tag('UB', None)
         else:
             #normal read, tag properly
-            read.set_tag('CB',sample+'-'+read.get_tag('CB'))
+            read.set_tag('CB',relabled_sample+'_'+read.get_tag('CB'))
     tweaked.write(read)
 
 tweaked.close()
